@@ -49,6 +49,8 @@ the route registry, global styles.
 
 - `main` must always run. Tasks are GitHub Issues; one short-lived branch per issue: `<you>/<issue#>-<task>`.
 - `git pull --rebase origin main` before starting a task; merge back within about an hour.
+- Never commit straight to `main`; every change goes through a PR. Create Issues and PRs with the
+  GitHub plugin (`gh` CLI if it isn't connected). Setup: `docs/PLAN.md` → "Git workflow".
 - Small PRs. Review with `/code-review` (Claude) or `codex review` before merging.
 - Running more than one agent yourself? Give each its own worktree (`claude -w <name>`) so they never share a folder.
 
