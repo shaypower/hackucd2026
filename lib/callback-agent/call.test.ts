@@ -33,7 +33,7 @@ describe("callback agent turns", () => {
   it("asks for missing fields without revealing them", async () => {
     heard({ isin: null, currency: null });
     const twiml = await answerTurn("CA1", "Subscribe five thousand units on account four zero zero one two");
-    expect(twiml).toMatch(/<Gather.*ISIN letter by letter.*currency/s);
+    expect(twiml).toMatch(/<Gather[\s\S]*ISIN letter by letter[\s\S]*currency/);
     expect(twiml).not.toContain("IE00B4L5Y983");
     expect(session.turns).toBe(1);
     expect(String(session.transcript)).toContain("Caller: Subscribe five thousand units");
@@ -44,7 +44,7 @@ describe("callback agent turns", () => {
     const twiml = await answerTurn("CA1", "Subscribe 5,000 units of IE00B4L5Y983 in US dollars, account 40012");
     expect(results[0].all_match).toBe(true);
     expect(session.outcome).toBe("matched");
-    expect(twiml).toMatch(/matches the instruction.*<Hangup\/>/s);
+    expect(twiml).toMatch(/matches the instruction[\s\S]*<Hangup\/>/);
   });
 
   it("saves a mismatch when the contact states a different quantity", async () => {
@@ -52,12 +52,12 @@ describe("callback agent turns", () => {
     const twiml = await answerTurn("CA1", "Subscribe 500 units of IE00B4L5Y983 in US dollars, account 40012");
     expect(results[0].all_match).toBe(false);
     expect(results[0].fields.filter((f) => !f.match).map((f) => f.field)).toEqual(["quantity"]);
-    expect(twiml).toMatch(/does not match.*will not be dealt/s);
+    expect(twiml).toMatch(/does not match[\s\S]*will not be dealt/);
   });
 
   it("re-asks once on silence, then gives up", async () => {
     expect(await answerTurn("CA1", "")).toMatch(/didn&#39;t catch that/);
-    expect(await answerTurn("CA1", "")).toMatch(/couldn&#39;t hear you.*<Hangup\/>/s);
+    expect(await answerTurn("CA1", "")).toMatch(/couldn&#39;t hear you[\s\S]*<Hangup\/>/);
     expect(session.outcome).toBe("incomplete");
     expect(results).toHaveLength(0);
   });
