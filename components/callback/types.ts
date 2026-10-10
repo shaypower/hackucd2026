@@ -15,4 +15,6 @@ export interface CallbackPanelProps {
   onApprove: () => void;
   samples?: SampleTranscript[]; // example callback transcripts for demos
   approved?: boolean;
+  exportUrl?: string; // Payments .xlsx, shown once approved
+  onExport?: () => void; // called when the download starts
 }

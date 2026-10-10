@@ -1,11 +1,10 @@
 // Typed client for the TelDeal API. Pages use this; presentational components never fetch.
 import {
   ApiError,
-  CallbackResult,
-  CheckResponse,
   ExtractResponse,
+  TradeDetail,
+  type TradeField,
   TranscribeResponse,
-  type ExtractedTrade,
   type UiError,
 } from "@/lib/types";
 
@@ -15,13 +14,13 @@ export class ApiClientError extends Error {
   }
 }
 
-async function post<T>(path: string, body: unknown, parse: (data: unknown) => T): Promise<T> {
+async function send<T>(method: string, path: string, body: unknown, parse: (data: unknown) => T): Promise<T> {
   let response: Response;
   try {
     response = await fetch(path, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
+      method,
+      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
     throw new ApiClientError({ code: "upstream_error", message: "Can't reach the server. Check your connection and try again." });
@@ -35,16 +34,10 @@ async function post<T>(path: string, body: unknown, parse: (data: unknown) => T)
 }
 
 export function extractCall(transcript: string): Promise<ExtractResponse> {
-  return post("/api/extract", { transcript }, (d) => ExtractResponse.parse(d));
+  return send("POST", "/api/extract", { transcript }, (d) => ExtractResponse.parse(d));
 }
 
-export function recheckTrade(extracted: ExtractedTrade): Promise<CheckResponse> {
-  return post("/api/check", { extracted }, (d) => CheckResponse.parse(d));
-}
 
-export function checkCallback(trade_id: string, original: ExtractedTrade, transcript: string): Promise<CallbackResult> {
-  return post("/api/callback", { trade_id, original, transcript }, (d) => CallbackResult.parse(d));
-}
 
 export async function transcribeAudio(wav: Blob): Promise<TranscribeResponse> {
   const form = new FormData();
@@ -62,3 +55,23 @@ export async function transcribeAudio(wav: Blob): Promise<TranscribeResponse> {
   }
   return TranscribeResponse.parse(data);
 }
+
+const detail = (d: unknown) => TradeDetail.parse(d);
+
+export function getTradeDetail(id: string): Promise<TradeDetail> {
+  return send("GET", `/api/trades/${id}`, undefined, detail);
+}
+
+export function editTradeField(id: string, field: TradeField, value: string): Promise<TradeDetail> {
+  return send("PATCH", `/api/trades/${id}`, { field, value }, detail);
+}
+
+export function recordCallback(id: string, transcript: string): Promise<TradeDetail> {
+  return send("POST", `/api/trades/${id}/callback`, { transcript }, detail);
+}
+
+export function approveTrade(id: string): Promise<TradeDetail> {
+  return send("POST", `/api/trades/${id}/approve`, undefined, detail);
+}
+
+export const exportUrl = (id: string) => `/api/trades/${id}/export`;

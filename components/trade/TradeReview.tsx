@@ -207,12 +207,16 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
             </Alert>
           )}
 
-          <div>
-            <Button disabled={!canProceed || pending} onClick={onProceedToCallback}>
-              Proceed to callback
-            </Button>
-            {!canProceed && <p className="mt-2 text-sm text-muted-foreground">Fix the failed checks (✕) before calling back.</p>}
-          </div>
+          {trade.status !== "approved" && (
+            <div>
+              <Button disabled={!canProceed || pending} onClick={onProceedToCallback}>
+                Proceed to callback
+              </Button>
+              {trade.checks.some((c) => c.status === "fail") && (
+                <p className="mt-2 text-sm text-muted-foreground">Fix the failed checks (✕) before calling back.</p>
+              )}
+            </div>
+          )}
         </section>
       </CardContent>
     </Card>

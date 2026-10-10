@@ -1,32 +1,30 @@
 "use client";
 // Container for /desk (Dev A): owns state and API calls; components only render props.
 import { useState } from "react";
+import { AuditTrail } from "@/components/audit/AuditTrail";
 import { CallbackPanel } from "@/components/callback/CallbackPanel";
 import { TradeInput } from "@/components/trade/TradeInput";
 import { TradeReview } from "@/components/trade/TradeReview";
 import type { AudioSample, SampleTranscript } from "@/components/trade/types";
-import { ApiClientError, checkCallback, extractCall, recheckTrade, transcribeAudio } from "@/lib/api-client";
+import {
+  ApiClientError,
+  approveTrade,
+  editTradeField,
+  exportUrl,
+  extractCall,
+  getTradeDetail,
+  recordCallback,
+  transcribeAudio,
+} from "@/lib/api-client";
 import { toWav16kMono } from "@/lib/audio/wav";
-import { applyEdit, EditError } from "@/lib/trades/edit";
 import { mockCallbackSamples } from "@/lib/mocks";
-import type { CallbackResult, ExtractResponse, Trade, TradeField, UiError } from "@/lib/types";
+import { approvalBlocker } from "@/lib/trades/approval";
+import type { ExtractResponse, TradeDetail, TradeField, UiError } from "@/lib/types";
 import { canProceed } from "@/lib/validation/checks";
 
 function toUiError(error: unknown): UiError {
   if (error instanceof ApiClientError) return error.error;
-  if (error instanceof EditError) return { code: "bad_request", message: error.message };
   return { code: "internal", message: "Something went wrong. Try again." };
-}
-
-function approveBlockedReason(trade: Trade, callback: CallbackResult | undefined): string | null {
-  if (!canProceed(trade.checks)) return "Fix the failed checks first.";
-  if (!trade.nominated_callback) return "No nominated callback contact on the register.";
-  if (!callback) return "Record the callback first.";
-  if (!callback.all_match) {
-    const fields = callback.fields.filter((f) => !f.match).map((f) => f.field.replace("_", " "));
-    return `Callback doesn't match: ${fields.join(", ")}. Don't deal; escalate or call again.`;
-  }
-  return null;
 }
 
 export function DeskClient({ samples, audioSamples }: { samples: SampleTranscript[]; audioSamples: AudioSample[] }) {
@@ -35,29 +33,43 @@ export function DeskClient({ samples, audioSamples }: { samples: SampleTranscrip
   const [audioNote, setAudioNote] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<UiError | null>(null);
-  const [result, setResult] = useState<Omit<ExtractResponse, "trades"> | null>(null);
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [tradeErrors, setTradeErrors] = useState<Record<string, UiError | null>>({});
-  const [callbackOpen, setCallbackOpen] = useState<Record<string, boolean>>({});
-  const [callbacks, setCallbacks] = useState<Record<string, CallbackResult>>({});
-  const [callbackErrors, setCallbackErrors] = useState<Record<string, UiError | null>>({});
-  const [callbackPending, setCallbackPending] = useState<string | null>(null);
-  const [approved, setApproved] = useState<Record<string, boolean>>({});
+  const [meta, setMeta] = useState<Omit<ExtractResponse, "trades"> | null>(null);
 
-  async function handleExtract(transcript: string) {
+  // Saved trades in the order they were read, with their server state (trade, latest callback, audit).
+  const [order, setOrder] = useState<string[]>([]);
+  const [details, setDetails] = useState<Record<string, TradeDetail>>({});
+  const [busy, setBusy] = useState<Record<string, "edit" | "callback" | "approve" | undefined>>({});
+  const [errors, setErrors] = useState<Record<string, UiError | null>>({});
+  const [callbackOpen, setCallbackOpen] = useState<Record<string, boolean>>({});
+
+  async function run(id: string, kind: "edit" | "callback" | "approve", action: () => Promise<TradeDetail>) {
+    setBusy((b) => ({ ...b, [id]: kind }));
+    setErrors((e) => ({ ...e, [id]: null }));
+    try {
+      const detail = await action();
+      setDetails((d) => ({ ...d, [id]: detail }));
+    } catch (error) {
+      setErrors((e) => ({ ...e, [id]: toUiError(error) }));
+    } finally {
+      setBusy((b) => ({ ...b, [id]: undefined }));
+    }
+  }
+
+  async function handleExtract(text: string) {
     setExtracting(true);
     setExtractError(null);
-    setTrades([]);
+    setOrder([]);
+    setDetails({});
+    setErrors({});
     setCallbackOpen({});
-    setCallbacks({});
-    setCallbackErrors({});
-    setApproved({});
-    setResult(null);
+    setMeta(null);
     try {
-      const { trades, ...meta } = await extractCall(transcript);
-      setTrades(trades);
-      setResult(meta);
+      const { trades, ...rest } = await extractCall(text);
+      setMeta(rest);
+      setOrder(trades.map((t) => t.id));
+      setDetails(Object.fromEntries(trades.map((t) => [t.id, { trade: t, callback: null, audit: [] }])));
+      // Load the saved audit trail (the "instruction captured" event).
+      await Promise.all(trades.map((t) => getTradeDetail(t.id).then((d) => setDetails((all) => ({ ...all, [t.id]: d }))).catch(() => {})));
     } catch (error) {
       setExtractError(toUiError(error));
     } finally {
@@ -85,45 +97,6 @@ export function DeskClient({ samples, audioSamples }: { samples: SampleTranscrip
     }
   }
 
-  async function handleEdit(trade: Trade, field: TradeField, value: string) {
-    setSavingId(trade.id);
-    setTradeErrors((e) => ({ ...e, [trade.id]: null }));
-    try {
-      const extracted = applyEdit(trade.extracted, field, value);
-      const checked = await recheckTrade(extracted);
-      // Fields changed, so any earlier callback no longer applies.
-      setCallbacks((c) => {
-        const next = { ...c };
-        delete next[trade.id];
-        return next;
-      });
-      setTrades((ts) =>
-        ts.map((t) =>
-          t.id === trade.id
-            ? { ...t, extracted, checks: checked.checks, status: checked.status, nominated_callback: checked.nominated_callback }
-            : t,
-        ),
-      );
-    } catch (error) {
-      setTradeErrors((e) => ({ ...e, [trade.id]: toUiError(error) }));
-    } finally {
-      setSavingId(null);
-    }
-  }
-
-  async function handleCallback(trade: Trade, transcript: string) {
-    setCallbackPending(trade.id);
-    setCallbackErrors((e) => ({ ...e, [trade.id]: null }));
-    try {
-      const result = await checkCallback(trade.id, trade.extracted, transcript);
-      setCallbacks((c) => ({ ...c, [trade.id]: result }));
-    } catch (error) {
-      setCallbackErrors((e) => ({ ...e, [trade.id]: toUiError(error) }));
-    } finally {
-      setCallbackPending(null);
-    }
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <TradeInput
@@ -140,40 +113,53 @@ export function DeskClient({ samples, audioSamples }: { samples: SampleTranscrip
 
       {audioNote && <p className="text-xs text-muted-foreground">{audioNote}</p>}
 
-      {result && (
+      {meta && (
         <p className="text-xs text-muted-foreground">
-          Read by <code>{result.model}</code> · checked against the {result.register_source === "database" ? "fund register database" : "built-in demo register"} ·{" "}
-          {trades.length} trade{trades.length === 1 ? "" : "s"} found
+          Read by <code>{meta.model}</code> · checked against the {meta.register_source === "database" ? "fund register database" : "built-in demo register"} ·{" "}
+          {order.length} trade{order.length === 1 ? "" : "s"} found and saved
         </p>
       )}
 
-      {trades.map((trade) => (
-        <div key={trade.id} className="flex flex-col gap-4">
-          <TradeReview
-            trade={trade}
-            pending={savingId === trade.id}
-            error={tradeErrors[trade.id] ?? null}
-            onEditField={(field, value) => handleEdit(trade, field, value)}
-            canProceed={canProceed(trade.checks)}
-            onProceedToCallback={() => setCallbackOpen((o) => ({ ...o, [trade.id]: true }))}
-          />
-          {callbackOpen[trade.id] && (
-            <CallbackPanel
+      {order.map((id) => {
+        const detail = details[id];
+        if (!detail) return null;
+        const { trade, callback, audit } = detail;
+        const approved = trade.status === "approved";
+        const blocker = approvalBlocker(trade, callback);
+        return (
+          <div key={id} className="flex flex-col gap-4">
+            <TradeReview
               trade={trade}
-              contact={trade.nominated_callback}
-              callback={callbacks[trade.id] ?? null}
-              pending={callbackPending === trade.id}
-              error={callbackErrors[trade.id] ?? null}
-              onSubmitCallback={(t) => handleCallback(trade, t)}
-              canApprove={approveBlockedReason(trade, callbacks[trade.id]) === null}
-              approveBlockedReason={approveBlockedReason(trade, callbacks[trade.id])}
-              onApprove={() => setApproved((a) => ({ ...a, [trade.id]: true }))}
-              samples={mockCallbackSamples}
-              approved={approved[trade.id] ?? false}
+              pending={busy[id] === "edit"}
+              error={busy[id] === undefined && !callbackOpen[id] ? (errors[id] ?? null) : null}
+              onEditField={(field: TradeField, value: string) => run(id, "edit", () => editTradeField(id, field, value))}
+              canProceed={canProceed(trade.checks) && !approved}
+              onProceedToCallback={() => setCallbackOpen((o) => ({ ...o, [id]: true }))}
             />
-          )}
-        </div>
-      ))}
+            {(callbackOpen[id] || callback || approved) && (
+              <CallbackPanel
+                trade={trade}
+                contact={trade.nominated_callback}
+                callback={callback}
+                pending={busy[id] === "callback" || busy[id] === "approve"}
+                error={callbackOpen[id] ? (errors[id] ?? null) : null}
+                onSubmitCallback={(t) => run(id, "callback", () => recordCallback(id, t))}
+                canApprove={blocker === null}
+                approveBlockedReason={blocker}
+                onApprove={() => run(id, "approve", () => approveTrade(id))}
+                samples={mockCallbackSamples}
+                approved={approved}
+                exportUrl={approved ? exportUrl(id) : undefined}
+                onExport={() =>
+                  // The export is logged server-side; refresh the trail once the file has been generated.
+                  setTimeout(() => getTradeDetail(id).then((d) => setDetails((all) => ({ ...all, [id]: d }))).catch(() => {}), 1500)
+                }
+              />
+            )}
+            <AuditTrail events={audit} />
+          </div>
+        );
+      })}
     </div>
   );
 }
