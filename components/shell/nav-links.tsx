@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/desk", label: "Dealing desk" },
   { href: "/trades", label: "Trades" },
+  { href: "/billing", label: "Billing" },
 ];
 
 export function NavLinks({ current }: { current?: string | null }) {

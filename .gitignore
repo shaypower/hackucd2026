@@ -245,3 +245,6 @@ CLAUDE.local.md
 
 # Payments exports downloaded while testing
 /teldeal-*.xlsx
+
+# LibreOffice lock files from opening an export
+.~lock.*#
