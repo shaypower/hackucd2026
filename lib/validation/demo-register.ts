@@ -5,10 +5,10 @@ import type { Register } from "@/lib/validation/register";
 
 export const demoRegister: Register = {
   funds: [
-    { isin: "IE00B4L5Y983", name: "iShares Core MSCI World UCITS ETF (Acc)", share_class_currencies: ["USD", "EUR"], cutoff_time: "12:00" },
-    { isin: "IE00B5BMR087", name: "iShares Core S&P 500 UCITS ETF (Acc)", share_class_currencies: ["USD"], cutoff_time: "12:00" },
-    { isin: "IE00BK5BQT80", name: "Vanguard FTSE All-World UCITS ETF (Acc)", share_class_currencies: ["USD"], cutoff_time: "12:00" },
-    { isin: "IE00B3XXRP09", name: "Vanguard S&P 500 UCITS ETF (Dist)", share_class_currencies: ["USD", "GBP"], cutoff_time: "12:00" },
+    { isin: "IE00B4L5Y983", name: "iShares Core MSCI World UCITS ETF (Acc)", share_class_currencies: ["USD", "EUR"], cutoff_time: "17:30" },
+    { isin: "IE00B5BMR087", name: "iShares Core S&P 500 UCITS ETF (Acc)", share_class_currencies: ["USD"], cutoff_time: "17:30" },
+    { isin: "IE00BK5BQT80", name: "Vanguard FTSE All-World UCITS ETF (Acc)", share_class_currencies: ["USD"], cutoff_time: "17:30" },
+    { isin: "IE00B3XXRP09", name: "Vanguard S&P 500 UCITS ETF (Dist)", share_class_currencies: ["USD", "GBP"], cutoff_time: "17:30" },
   ],
   accounts: [
     { account_no: "40012", account_name: "Harbourview Pension Trustees" },

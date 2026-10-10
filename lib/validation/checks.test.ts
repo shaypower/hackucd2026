@@ -5,9 +5,9 @@ import { canProceed, runChecks, statusFromChecks } from "@/lib/validation/checks
 import { demoRegister } from "@/lib/validation/demo-register";
 import { nominatedContact } from "@/lib/validation/register";
 
-// 10:00 in Dublin (IST, UTC+1) on a weekday, before the 12:00 cut-off.
+// 10:00 in Dublin (IST, UTC+1) on a weekday, before the 17:30 cut-off.
 const MORNING = new Date("2026-10-07T09:00:00Z");
-const AFTERNOON = new Date("2026-10-07T13:30:00Z");
+const AFTERNOON = new Date("2026-10-07T17:00:00Z"); // 18:00 Dublin, after the 17:30 cut-off
 
 const clean = mockTradeClean.extracted;
 
