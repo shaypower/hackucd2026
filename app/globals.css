@@ -337,6 +337,28 @@
 .td-progress {
   animation: td-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
+/* Callback mismatch: the row flares once, and the strike through the double rule draws in. */
+@keyframes td-flag-in {
+  0% {
+    background-color: rgb(161 56 42 / 0.28);
+  }
+  100% {
+    background-color: var(--fail-wash);
+  }
+}
+.td-flag {
+  animation: td-flag-in 0.9s ease-out 0.3s both;
+}
+@keyframes td-strike-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.td-strike {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  animation: td-strike-draw 0.35s ease-out 0.45s forwards;
+}
 /* Live audio level bars while recording or transcribing. */
 @keyframes td-level {
   0%,
