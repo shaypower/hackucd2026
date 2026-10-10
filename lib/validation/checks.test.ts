@@ -155,3 +155,24 @@ describe("nominatedContact", () => {
     expect(nominatedContact(demoRegister, "99999")).toBeNull();
   });
 });
+
+describe("demo client: Shay Power instructs, Hersh Singh confirms", () => {
+  const shay: ExtractedTrade = {
+    direction: "subscribe", isin: "IE00B3XXRP09", fund_name: "Vanguard S&P 500", account_no: "40058",
+    account_name: "University of Limerick Investment Group", caller_name: "Shay Power", currency: "USD",
+    quantity: 2500, quantity_type: "units", evidence: [],
+  };
+
+  it("Shay's instruction passes every check", () => {
+    expect(runChecks(shay, demoRegister, MORNING).filter((c) => c.status !== "pass")).toEqual([]);
+  });
+
+  it("the callback goes to Hersh, not to Shay", () => {
+    expect(nominatedContact(demoRegister, "40058")?.name).toBe("Hersh Singh");
+  });
+
+  it("Hersh can also instruct; an outsider can't", () => {
+    expect(byId(runChecks({ ...shay, caller_name: "Hersh Singh" }, demoRegister, MORNING), "caller_authorised")?.status).toBe("pass");
+    expect(byId(runChecks({ ...shay, caller_name: "John Kelly" }, demoRegister, MORNING), "caller_authorised")?.status).toBe("fail");
+  });
+});

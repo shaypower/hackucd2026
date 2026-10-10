@@ -12,13 +12,16 @@ insert into public.funds (isin, name, share_class_currencies, cutoff_time) value
 insert into public.accounts (account_no, account_name) values
   ('40012', 'Harbourview Pension Trustees'),
   ('40027', 'Northwall Charitable Fund'),
-  ('40031', 'Oakpark Family Office');
+  ('40031', 'Oakpark Family Office'),
+  ('40058', 'University of Limerick Investment Group');
 
 insert into public.authorised_callers (account_no, name, phone, is_nominated_callback) values
   ('40012', 'Mark Doyle', '+353 1 555 0142', true),
   ('40012', 'Niamh Fallon', '+353 1 555 0143', false),
   ('40027', 'Sinead Walsh', '+353 1 555 0177', true),
-  ('40031', 'Peter Quinn', '+353 1 555 0190', true);
+  ('40031', 'Peter Quinn', '+353 1 555 0190', true),
+  ('40058', 'Shay Power', '+353 1 555 0158', false),
+  ('40058', 'Hersh Singh', '+353 1 555 0159', true);
 
 insert into public.subscriptions (desk_id, status) values ('desk_demo', 'inactive')
   on conflict (desk_id) do nothing;

@@ -35,6 +35,18 @@ Caller: Please subscribe 250,000 euro into IE00B4L5Y984 today, it's urgent.
 Agent: Can I take a number to call you back on?
 Caller: Just use this number, I'm travelling.`;
 
+export const transcriptShay = `Agent: Good afternoon, dealing desk, Aoife speaking.
+Caller: Hi Aoife, it's Shay Power, calling about the University of Limerick Investment Group account, account number 40058.
+Agent: Thanks Shay, what can I do for you?
+Caller: I'd like to subscribe for 2,500 units in the Vanguard S&P 500, ISIN IE00B3XXRP09, US dollar share class please.
+Agent: So that's a subscription of 2,500 units in IE00B3XXRP09, US dollars, for account 40058. Correct?
+Caller: That's correct, thanks.`;
+
+export const callbackTranscriptHersh = `Agent: Hi Hersh, it's the dealing desk calling back to confirm an instruction on account 40058.
+Caller: Go ahead.
+Agent: Can you tell me the instruction you placed today?
+Caller: Yes, Hersh Singh speaking. Subscribe 2,500 units of IE00B3XXRP09, the Vanguard S&P 500, US dollar share class, for University of Limerick Investment Group, account 40058.`;
+
 export const transcriptUnreadable = `Agent: Dealing desk...
 Caller: [inaudible] ...account... [line breaks up] ...the usual...
 Agent: Sorry, you're breaking up.`;
@@ -51,6 +63,7 @@ Caller: Yes, Mark Doyle speaking. Subscribe 500 units of IE00B4L5Y983, the iShar
 
 export const mockSamples: SampleTranscript[] = [
   { id: "clean", label: "Clean subscription", transcript: transcriptClean },
+  { id: "shay", label: "Shay Power (UL Investment Group)", transcript: transcriptShay },
   { id: "ambiguous", label: "Spoken ISIN, no units", transcript: transcriptAmbiguous },
   { id: "fraud", label: "Unauthorised caller, wrong ISIN", transcript: transcriptFraud },
   { id: "unreadable", label: "Unreadable call", transcript: transcriptUnreadable },
