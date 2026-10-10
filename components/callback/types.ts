@@ -1,4 +1,5 @@
 // Props contract for callback components. Owner: Dev A; change only by adding optional props.
+import type { SampleTranscript } from "@/components/trade/types";
 import type { CallbackResult, Contact, Trade, UiError } from "@/lib/types";
 
 // /trades/[id]/callback: who to call, paste the callback transcript, see the field-by-field diff.
@@ -12,4 +13,6 @@ export interface CallbackPanelProps {
   canApprove: boolean;
   approveBlockedReason: string | null; // e.g. "Callback quantity differs", "Subscription required"
   onApprove: () => void;
+  samples?: SampleTranscript[]; // example callback transcripts for demos
+  approved?: boolean;
 }
