@@ -128,6 +128,7 @@ export const FieldDiff = z.object({
   original: FieldValue,
   callback: FieldValue,
   match: z.boolean(),
+  accepted: z.boolean().optional(), // a name difference the dealer checked and accepted
 });
 export type FieldDiff = z.infer<typeof FieldDiff>;
 
@@ -147,6 +148,7 @@ export const AuditEventType = z.enum([
   "field_edited",
   "callback_recorded",
   "callback_call", // automated callback call placed / ended
+  "callback_field_accepted", // dealer accepted a name difference on the callback
   "approved",
   "rejected",
   "exported",

@@ -74,6 +74,10 @@ export function approveTrade(id: string): Promise<TradeDetail> {
   return send("POST", `/api/trades/${id}/approve`, undefined, detail);
 }
 
+export function acceptCallbackField(id: string, field: TradeField): Promise<TradeDetail> {
+  return send("PATCH", `/api/trades/${id}/callback`, { field }, detail);
+}
+
 export interface PlacedCall {
   call_sid: string;
   to: string; // masked

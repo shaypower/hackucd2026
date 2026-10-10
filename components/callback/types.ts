@@ -1,6 +1,6 @@
 // Props contract for callback components. Owner: Dev A; change only by adding optional props.
 import type { SampleTranscript } from "@/components/trade/types";
-import type { CallbackResult, Contact, Trade, UiError } from "@/lib/types";
+import type { CallbackResult, Contact, Trade, TradeField, UiError } from "@/lib/types";
 
 // /trades/[id]/callback: who to call, paste the callback transcript, see the field-by-field diff.
 export interface CallbackPanelProps {
@@ -20,4 +20,7 @@ export interface CallbackPanelProps {
   // Optional automated callback by phone (TelDeal's agent calls the nominated contact)
   onCallNow?: () => void;
   calling?: { to: string; redirected: boolean; status: string } | null;
+  // Optional: dealer accepts a name difference (fund / account name / speaker). Key fields can't be accepted.
+  onAcceptField?: (field: TradeField) => void;
+  acceptableFields?: TradeField[];
 }

@@ -5,9 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { AuditTrail } from "@/components/audit/AuditTrail";
 import { CallbackPanel } from "@/components/callback/CallbackPanel";
 import { TradeReview } from "@/components/trade/TradeReview";
-import { ApiClientError, approveTrade, callContactNow, editTradeField, exportUrl, getTradeDetail, recordCallback } from "@/lib/api-client";
+import { acceptCallbackField, ApiClientError, approveTrade, callContactNow, editTradeField, exportUrl, getTradeDetail, recordCallback } from "@/lib/api-client";
 import { approvalBlocker } from "@/lib/trades/approval";
 import { makeCallbackSamples } from "@/lib/trades/callback-samples";
+import { SOFT_FIELDS } from "@/lib/trades/diff";
 import type { TradeDetail, TradeField, UiError } from "@/lib/types";
 import { canProceed } from "@/lib/validation/checks";
 
@@ -105,6 +106,8 @@ export function TradeWorkspace({ initial, openCallback = false }: { initial: Tra
           approved={approved}
           exportUrl={approved ? exportUrl(id) : undefined}
           onCallNow={PHONE_LINE ? callNow : undefined}
+          onAcceptField={(field) => run("callback", () => acceptCallbackField(id, field))}
+          acceptableFields={SOFT_FIELDS}
           calling={calling}
           onExport={() =>
             // The export is logged server-side; refresh the trail once the file has been generated.
