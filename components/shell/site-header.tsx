@@ -4,7 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const NAV = [{ href: "/desk", label: "Dealing desk" }];
+const NAV = [
+  { href: "/desk", label: "Dealing desk" },
+  { href: "/trades", label: "Trades" },
+];
 
 /** The TelDeal mark: two hairlines (matched) and a copper point. */
 export function BrandMark({ className }: { className?: string }) {
