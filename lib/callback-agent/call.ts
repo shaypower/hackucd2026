@@ -1,6 +1,17 @@
 // Server side of the automated callback: placing the call and running each turn of the conversation.
 import "server-only";
-import { closing, MAX_SILENT_TURNS, NO_SPEECH_GIVE_UP, NO_SPEECH_RETRY, nextStep, OPENING } from "@/lib/callback-agent/dialogue";
+import {
+  closing,
+  FULL_QUESTION,
+  INCOMPLETE,
+  INTRO,
+  isRepeatRequest,
+  MAX_UNPRODUCTIVE_TURNS,
+  missingFields,
+  NO_SPEECH_GIVE_UP,
+  NO_SPEECH_RETRY,
+  nextStep,
+} from "@/lib/callback-agent/dialogue";
 import { extractTrades } from "@/lib/ai/extract";
 import { getRegister } from "@/lib/db/get-register";
 import { addAudit, getCallbackCall, getTrade, saveCallbackResult, updateCallbackCall, type CallbackCall } from "@/lib/db/trades";
@@ -43,29 +54,34 @@ export async function placeCallbackCall(baseUrl: string, to: string): Promise<st
   return data.sid;
 }
 
+// Speech or a key press; "*" repeats the question.
 const gather = (prompt: string) =>
-  `<Gather input="speech" action="/api/twilio/callback/answer" method="POST" actionOnEmptyResult="true" speechTimeout="auto" timeout="7" language="en-GB" hints="${attr("subscribe, subscription, redeem, redemption, units, euro, dollars, sterling, ISIN, I E, account")}">${say(prompt)}</Gather>`;
+  `<Gather input="speech dtmf" numDigits="1" action="/api/twilio/callback/answer" method="POST" actionOnEmptyResult="true" speechTimeout="auto" timeout="7" language="en-GB" hints="${attr("subscribe, subscription, redeem, redemption, units, euro, dollars, sterling, ISIN, I E, account, repeat")}">${say(prompt)}</Gather>`;
 
-/** First thing the contact hears. */
+/** First thing the contact hears: the intro plays in full, then the question (which they can talk over). */
 export async function openingTurn(call: CallbackCall): Promise<string> {
-  await updateCallbackCall(call.call_sid, { transcript: `Agent: ${OPENING}` });
-  return gather(OPENING);
+  await updateCallbackCall(call.call_sid, { transcript: `Agent: ${INTRO} ${FULL_QUESTION}` });
+  return say(INTRO) + gather(FULL_QUESTION);
 }
 
-/** Handles one answer; returns the TwiML for what happens next. */
-export async function answerTurn(callSid: string, speech: string): Promise<string> {
+/** Handles one answer (speech, or a key press in `digits`); returns the TwiML for what happens next. */
+export async function answerTurn(callSid: string, speech: string, digits = ""): Promise<string> {
   const call = await getCallbackCall(callSid);
   if (!call) return say("Sorry, this call could not be matched to an instruction. Goodbye.") + "<Hangup/>";
 
-  if (!speech.trim()) {
-    const silent = call.silent_turns + 1;
-    await updateCallbackCall(callSid, { silent_turns: silent });
-    if (silent >= MAX_SILENT_TURNS) {
-      await updateCallbackCall(callSid, { outcome: "incomplete" });
-      await addAudit(call.trade_id, "callback_call", { call_sid: callSid, status: "no response from contact" });
+  // Silence, "*", "sorry, what?": doesn't count as an answer. Repeat the full question, up to a limit.
+  const repeat = digits === "*" || (speech.trim() !== "" && isRepeatRequest(speech));
+  if (!speech.trim() || repeat) {
+    const unproductive = call.silent_turns + 1;
+    const line = speech.trim() ? `\nCaller: ${speech.trim()}` : digits ? `\nCaller: (pressed ${digits})` : "";
+    if (unproductive >= MAX_UNPRODUCTIVE_TURNS) {
+      await updateCallbackCall(callSid, { silent_turns: unproductive, outcome: "incomplete", transcript: call.transcript + line });
+      await addAudit(call.trade_id, "callback_call", { call_sid: callSid, status: "contact couldn't be heard or didn't give the instruction" });
       return say(NO_SPEECH_GIVE_UP) + "<Hangup/>";
     }
-    return gather(NO_SPEECH_RETRY);
+    const prompt = repeat ? FULL_QUESTION : NO_SPEECH_RETRY;
+    await updateCallbackCall(callSid, { silent_turns: unproductive, transcript: `${call.transcript}${line}\nAgent: ${prompt}` });
+    return gather(prompt);
   }
 
   const transcript = `${call.transcript}\nCaller: ${speech.trim()}`;
@@ -79,9 +95,19 @@ export async function answerTurn(callSid: string, speech: string): Promise<strin
     return gather(step.say);
   }
 
+  if (step.kind === "incomplete") {
+    // Not a mismatch: the contact never stated everything. The trade stays awaiting callback.
+    await updateCallbackCall(callSid, { transcript: `${transcript}\nAgent: ${INCOMPLETE}`, turns, outcome: "incomplete" });
+    await addAudit(call.trade_id, "callback_call", {
+      call_sid: callSid,
+      status: `not confirmed: contact didn't give ${missingFields(heard).join(", ").replace(/_/g, " ")}`,
+    });
+    return say(INCOMPLETE) + "<Hangup/>";
+  }
+
   const { register } = await getRegister();
   const trade = await getTrade(call.trade_id, register);
-  const confirmed = heard ?? { ...trade.extracted, direction: null, isin: null, account_no: null, quantity: null, quantity_type: null, currency: null, evidence: [] };
+  const confirmed = heard!; // finish means every key field was stated
   const { fields, all_match } = diffTrades(trade.extracted, confirmed);
   const callback: CallbackResult = {
     id: crypto.randomUUID(),

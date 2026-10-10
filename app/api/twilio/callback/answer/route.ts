@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const params = await verifiedTwilioParams(request);
   if (!params) return new Response("Forbidden", { status: 403 });
   try {
-    return twiml(await answerTurn(params.CallSid ?? "", params.SpeechResult ?? ""));
+    return twiml(await answerTurn(params.CallSid ?? "", params.SpeechResult ?? "", params.Digits ?? ""));
   } catch (error) {
     console.error("callback agent failed:", error);
     return twiml(say("Sorry, something went wrong on our side. The dealing desk will call you back. Goodbye.") + "<Hangup/>");

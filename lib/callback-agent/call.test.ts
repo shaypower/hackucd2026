@@ -30,13 +30,34 @@ beforeEach(() => {
 });
 
 describe("callback agent turns", () => {
-  it("asks for missing fields without revealing them", async () => {
+  it("asks for a missing field without revealing it", async () => {
     heard({ isin: null, currency: null });
     const twiml = await answerTurn("CA1", "Subscribe five thousand units on account four zero zero one two");
-    expect(twiml).toMatch(/<Gather[\s\S]*ISIN letter by letter[\s\S]*currency/);
+    expect(twiml).toMatch(/<Gather[\s\S]*I still need the fund ISIN/);
     expect(twiml).not.toContain("IE00B4L5Y983");
     expect(session.turns).toBe(1);
     expect(String(session.transcript)).toContain("Caller: Subscribe five thousand units");
+  });
+
+  it("repeats the full question for 'sorry, what?' or *, without calling the model", async () => {
+    expect(await answerTurn("CA1", "Sorry, what?")).toMatch(/Please tell me the instruction in full/);
+    expect(await answerTurn("CA1", "", "*")).toMatch(/Please tell me the instruction in full/);
+    expect(extract).not.toHaveBeenCalled();
+    expect(session.turns).toBe(0);
+  });
+
+  it("re-asks the full question when the answer contains no instruction", async () => {
+    heard(null);
+    expect(await answerTurn("CA1", "Yes I'm here, go on")).toMatch(/Please tell me the instruction in full/);
+  });
+
+  it("ends as incomplete (no mismatch saved) when key fields never come", async () => {
+    session.turns = 4;
+    heard({ isin: null });
+    const twiml = await answerTurn("CA1", "Subscribe five thousand units in dollars, account 40012");
+    expect(twiml).toMatch(/couldn&#39;t confirm every detail/);
+    expect(results).toHaveLength(0);
+    expect(session.outcome).toBe("incomplete");
   });
 
   it("saves a matched callback and says goodbye", async () => {
@@ -55,7 +76,8 @@ describe("callback agent turns", () => {
     expect(twiml).toMatch(/does not match[\s\S]*will not be dealt/);
   });
 
-  it("re-asks once on silence, then gives up", async () => {
+  it("re-asks on silence, then gives up", async () => {
+    expect(await answerTurn("CA1", "")).toMatch(/didn&#39;t catch that/);
     expect(await answerTurn("CA1", "")).toMatch(/didn&#39;t catch that/);
     expect(await answerTurn("CA1", "")).toMatch(/couldn&#39;t hear you[\s\S]*<Hangup\/>/);
     expect(session.outcome).toBe("incomplete");
