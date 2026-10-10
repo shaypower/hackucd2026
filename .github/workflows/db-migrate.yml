@@ -1,0 +1,29 @@
+# Applies Supabase migrations (and the demo-register seed) when they change on main.
+# Runs in GitHub Actions because many local networks block outbound Postgres ports.
+name: Database migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - ".github/workflows/db-migrate.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+      - name: Push migrations and seed
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --include-seed --yes
