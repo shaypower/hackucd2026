@@ -74,6 +74,20 @@ export function approveTrade(id: string): Promise<TradeDetail> {
   return send("POST", `/api/trades/${id}/approve`, undefined, detail);
 }
 
+/** Demo reset: deletes the trade and its audit trail. */
+export async function deleteTrade(id: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/trades/${id}`, { method: "DELETE" });
+  } catch {
+    throw new ApiClientError({ code: "upstream_error", message: "Can't reach the server. Check your connection and try again." });
+  }
+  if (!response.ok) {
+    const parsed = ApiError.safeParse(await response.json().catch(() => null));
+    throw new ApiClientError(parsed.success ? parsed.data.error : { code: "internal", message: `Delete failed (${response.status}).` });
+  }
+}
+
 export function acceptCallbackField(id: string, field: TradeField): Promise<TradeDetail> {
   return send("PATCH", `/api/trades/${id}/callback`, { field }, detail);
 }

@@ -1,78 +1,41 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AutoRefresh } from "./auto-refresh";
 import { DeskStatsCards } from "./stats";
+import { TradesTable } from "./trades-table";
+import { DeskCountsSkeleton } from "@/components/landing/landing-blocks";
 import { listRecentTrades } from "@/lib/db/trades";
-import { STATUS_LABEL, STATUS_STYLE } from "@/lib/trades/status";
 
 export const metadata: Metadata = { title: "Trades · TelDeal" };
 
 async function TradeTable() {
   await connection();
-  const trades = await listRecentTrades(50);
-  if (trades.length === 0) {
-    return (
-      <p className="text-muted-foreground">
-        No trades yet. <Link href="/desk" className="underline">Capture one on the dealing desk.</Link>
-      </p>
-    );
-  }
-  const fmtTime = (iso: string) =>
-    new Date(iso).toLocaleString("en-IE", { timeZone: "Europe/Dublin", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-muted-foreground">
-            <th className="py-2 pr-3 font-medium">Received</th>
-            <th className="py-2 pr-3 font-medium">Source</th>
-            <th className="py-2 pr-3 font-medium">Instruction</th>
-            <th className="py-2 pr-3 font-medium">Account</th>
-            <th className="py-2 pr-3 text-right font-medium">Quantity</th>
-            <th className="py-2 font-medium">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {trades.map((t) => (
-            <tr key={t.id} className="border-b hover:bg-muted/50">
-              <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">{fmtTime(t.created_at)}</td>
-              <td className="py-2 pr-3 whitespace-nowrap">{t.channel === "phone" ? `📞 ${t.caller_id ?? "phone"}` : "Desk"}</td>
-              <td className="py-2 pr-3">
-                <Link href={`/trades/${t.id}`} className="font-medium hover:underline">
-                  {t.direction ? t.direction[0].toUpperCase() + t.direction.slice(1) : "Trade"} <span className="font-mono">{t.isin ?? "—"}</span>
-                </Link>
-              </td>
-              <td className="py-2 pr-3 font-mono">{t.account_no ?? "—"}</td>
-              <td className="py-2 pr-3 text-right font-mono tabular-nums">{t.quantity === null ? "—" : new Intl.NumberFormat("en-IE").format(t.quantity)}</td>
-              <td className="py-2">
-                {t.blocked && t.status === "needs_review" ? (
-                  <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-red-900 dark:bg-red-950 dark:text-red-200">Blocked</span>
-                ) : (
-                  <span className={`rounded px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_STYLE[t.status]}`}>{STATUS_LABEL[t.status]}</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <TradesTable trades={await listRecentTrades(50)} />;
 }
 
 export default function TradesPage() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Trades</h1>
-        <p className="text-muted-foreground">Every instruction captured on the desk or the phone line, with what the checks and callbacks caught. Updates live.</p>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:px-10 sm:py-10">
+      <header className="flex animate-in flex-wrap items-end justify-between gap-4 duration-500 ease-out fade-in fill-mode-both slide-in-from-bottom-2">
+        <div className="flex flex-col gap-2">
+          <p className="font-mono text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">Desk ledger</p>
+          <h1 className="font-serif text-4xl leading-none tracking-[-0.018em] sm:text-[44px]">Trades</h1>
+          <p className="max-w-xl text-[15px] text-muted-foreground">Every instruction captured on the desk or the phone line, with what the checks and callbacks caught.</p>
+        </div>
+        <p className="inline-flex items-center gap-2 rounded-full border border-border bg-paper px-3 py-1 text-[12.5px] font-medium">
+          <span aria-hidden="true" className="relative flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-pass opacity-50" />
+            <span className="relative inline-flex size-2 rounded-full bg-pass" />
+          </span>
+          Updates live
+        </p>
       </header>
       <AutoRefresh />
-      <Suspense fallback={<div className="h-20 animate-pulse rounded-md bg-muted" />}>
+      <Suspense fallback={<DeskCountsSkeleton />}>
         <DeskStatsCards />
       </Suspense>
-      <Suspense fallback={<p className="text-muted-foreground">Loading trades…</p>}>
+      <Suspense fallback={<div aria-hidden="true" className="h-64 animate-pulse rounded-xl border border-border bg-muted" />}>
         <TradeTable />
       </Suspense>
     </main>

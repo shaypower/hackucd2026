@@ -26,12 +26,12 @@ async function SavedTrade({ params }: { params: Promise<{ id: string }> }) {
 
 export default function TradePage({ params }: PageProps<"/trades/[id]">) {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6">
-      <Link href="/trades" className="text-sm text-muted-foreground hover:underline">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-8 sm:px-10 sm:py-10">
+      <Link href="/trades" className="w-fit font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase underline-offset-4 hover:text-foreground hover:underline">
         ← All trades
       </Link>
-      <h1 className="text-2xl font-semibold tracking-tight">Trade</h1>
-      <Suspense fallback={<p className="text-muted-foreground">Loading trade…</p>}>
+      <h1 className="sr-only">Trade</h1>
+      <Suspense fallback={<div aria-hidden="true" className="h-96 animate-pulse rounded-xl border border-border bg-muted" />}>
         <SavedTrade params={params} />
       </Suspense>
     </main>
