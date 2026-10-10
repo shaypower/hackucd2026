@@ -42,6 +42,8 @@ export function CallbackPanel({
   onExport,
   onCallNow,
   calling = null,
+  onAcceptField,
+  acceptableFields = [],
 }: CallbackPanelProps) {
   const [transcript, setTranscript] = useState("");
 
@@ -152,7 +154,17 @@ export function CallbackPanel({
                     </th>
                     <td className="py-2 pr-3 font-mono">{show(f.original)}</td>
                     <td className={`py-2 pr-3 font-mono ${f.match ? "" : "font-bold text-red-700 dark:text-red-300"}`}>{show(f.callback)}</td>
-                    <td className="py-2">{f.match ? "✓" : "✕"}</td>
+                    <td className="py-2 whitespace-nowrap">
+                      {f.match ? (f.accepted ? <span title="Accepted by the dealer">✓ accepted</span> : "✓") : "✕"}
+                      {!f.match && !approved && onAcceptField && acceptableFields.includes(f.field) && (
+                        <Button size="sm" variant="outline" className="ml-2 h-6" disabled={pending} onClick={() => onAcceptField(f.field)}>
+                          Accept
+                        </Button>
+                      )}
+                      {!f.match && !acceptableFields.includes(f.field) && (
+                        <span className="ml-2 text-xs text-muted-foreground">key field: call again</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

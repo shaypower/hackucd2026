@@ -7,6 +7,7 @@ const LABELS: Record<AuditEvent["type"], string> = {
   field_edited: "Field corrected",
   callback_recorded: "Callback recorded",
   callback_call: "Callback call",
+  callback_field_accepted: "Callback difference accepted",
   approved: "Approved",
   rejected: "Rejected",
   exported: "Exported to Payments",
@@ -30,6 +31,8 @@ function describe(e: AuditEvent): string {
       return p.status === "dialling"
         ? `Calling ${p.contact ?? "nominated contact"}${p.demo_redirected_to ? ` (demo: redirected to ${p.demo_redirected_to})` : ""}`
         : String(p.status ?? "");
+    case "callback_field_accepted":
+      return `${String(p.field).replace("_", " ")}: ${JSON.stringify(p.callback)} accepted as ${JSON.stringify(p.original)}`;
     case "exported":
       return String(p.file ?? "");
     default:

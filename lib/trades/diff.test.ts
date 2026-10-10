@@ -39,3 +39,38 @@ describe("diffTrades", () => {
     expect(mismatched(diffTrades(original, { ...original, account_name: "Oakpark Family Office" }))).toEqual(["account_name"]);
   });
 });
+
+describe("names on the callback", () => {
+  it("ignores speech-to-text spelling of the fund name when the ISIN matches", () => {
+    expect(diffTrades(original, { ...original, fund_name: "eye shares core msci world" }).all_match).toBe(true);
+  });
+
+  it("treats sound-alike names as equal", async () => {
+    const { namesAlike } = await import("@/lib/trades/diff");
+    expect(namesAlike("iShares Core MSCI World", "eye shares core msci world")).toBe(true);
+    expect(namesAlike("Harbourview Pension Trustees", "Harbour View Pension Trustees")).toBe(true);
+    expect(namesAlike("Harbourview Pension Trustees", "Oakpark Family Office")).toBe(false);
+  });
+
+  it("still flags a different fund name when the ISIN doesn't match", () => {
+    const r = diffTrades(original, { ...original, isin: "IE00BK5BQT80", fund_name: "Vanguard FTSE All-World" });
+    expect(mismatched(r)).toEqual(["isin", "fund_name"]);
+  });
+});
+
+describe("acceptField", () => {
+  it("lets the dealer accept a name difference and recomputes the result", async () => {
+    const { acceptField } = await import("@/lib/trades/diff");
+    const r = diffTrades(original, { ...original, account_name: "Oakpark Family Office" });
+    expect(r.all_match).toBe(false);
+    const accepted = acceptField(r.fields, "account_name");
+    expect(accepted.all_match).toBe(true);
+    expect(accepted.fields.find((f) => f.field === "account_name")).toMatchObject({ match: true, accepted: true });
+  });
+
+  it("refuses to accept a key field", async () => {
+    const { acceptField } = await import("@/lib/trades/diff");
+    const r = diffTrades(original, mockCallbackMismatch.extracted);
+    expect(() => acceptField(r.fields, "quantity")).toThrow(/key field/);
+  });
+});

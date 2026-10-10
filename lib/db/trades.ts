@@ -7,6 +7,7 @@ import {
   CallbackResult,
   ExtractedTrade,
   type AuditEventType,
+  type FieldDiff,
   type Check,
   type Trade,
   type TradeDetail,
@@ -224,4 +225,9 @@ export async function saveCallbackResult(callback: CallbackResult, meta: Record<
     all_match: callback.all_match,
     mismatched: callback.fields.filter((f) => !f.match).map((f) => f.field),
   });
+}
+
+export async function updateCallbackFields(callbackId: string, fields: FieldDiff[], allMatch: boolean): Promise<void> {
+  const { error } = await db().from("callbacks").update({ fields, all_match: allMatch }).eq("id", callbackId);
+  if (error) fail("update callback", error);
 }
