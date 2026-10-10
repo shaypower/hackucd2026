@@ -59,6 +59,9 @@ the route registry, global styles.
 <!-- one line each: path - what it is -->
 - `lib/utils.ts` - `cn()` class-name merge helper (shadcn)
 - `components/ui/` - shadcn components: button, card, textarea, input, label, badge, alert, table, separator
+- `lib/types.ts` - zod schemas + types shared by API, pages and components (Trade, Check, CallbackResult, AuditEvent, ApiError...)
+- `components/{trade,callback,audit,billing}/types.ts` - props contracts for presentational components
+- `lib/mocks.ts` - mock trades/callbacks/audit/subscription/errors covering every UI state (for `/dev/gallery` and tests)
 
 <!-- BEGIN:nextjs-agent-rules -->
 
