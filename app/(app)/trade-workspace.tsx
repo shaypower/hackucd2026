@@ -33,6 +33,15 @@ export function TradeWorkspace({ initial, openCallback = false }: { initial: Tra
 
   useEffect(() => () => void (callPoll.current && clearInterval(callPoll.current)), []);
 
+  // Approval needs an active desk subscription (Stripe). Explain it up front instead of failing on click.
+  const [subscribed, setSubscribed] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch("/api/billing")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s: { status?: string; configured?: boolean } | null) => setSubscribed(s?.configured ? s.status === "active" : null))
+      .catch(() => setSubscribed(null));
+  }, [trade.status]);
+
   async function callNow() {
     setError(null);
     try {
@@ -76,7 +85,9 @@ export function TradeWorkspace({ initial, openCallback = false }: { initial: Tra
   }
 
   const approved = trade.status === "approved";
-  const blocker = approvalBlocker(trade, callback);
+  const blocker =
+    approvalBlocker(trade, callback) ??
+    (subscribed === false ? "Approving and exporting needs an active TelDeal Desk subscription: subscribe on the Billing page (€49/month, sandbox)." : null);
   const showCallback = callbackOpen || callback !== null || approved;
 
   return (

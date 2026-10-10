@@ -14,6 +14,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           <Link href="/trades" className="text-muted-foreground hover:text-foreground">
             Trades
           </Link>
+          <Link href="/billing" className="ml-auto text-muted-foreground hover:text-foreground">
+            Billing
+          </Link>
         </nav>
       </header>
       {children}
