@@ -4,6 +4,7 @@ import {
   CallbackResult,
   CheckResponse,
   ExtractResponse,
+  TranscribeResponse,
   type ExtractedTrade,
   type UiError,
 } from "@/lib/types";
@@ -43,4 +44,21 @@ export function recheckTrade(extracted: ExtractedTrade): Promise<CheckResponse> 
 
 export function checkCallback(trade_id: string, original: ExtractedTrade, transcript: string): Promise<CallbackResult> {
   return post("/api/callback", { trade_id, original, transcript }, (d) => CallbackResult.parse(d));
+}
+
+export async function transcribeAudio(wav: Blob): Promise<TranscribeResponse> {
+  const form = new FormData();
+  form.append("audio", wav, "call.wav");
+  let response: Response;
+  try {
+    response = await fetch("/api/transcribe", { method: "POST", body: form });
+  } catch {
+    throw new ApiClientError({ code: "upstream_error", message: "Can't reach the server. Check your connection and try again." });
+  }
+  const data: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const parsed = ApiError.safeParse(data);
+    throw new ApiClientError(parsed.success ? parsed.data.error : { code: "internal", message: `Upload failed (${response.status}).` });
+  }
+  return TranscribeResponse.parse(data);
 }

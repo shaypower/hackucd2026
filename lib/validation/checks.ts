@@ -40,6 +40,11 @@ function formatQuantity(trade: ExtractedTrade): string {
   return trade.quantity_type === "units" ? `${amount} units` : amount;
 }
 
+/** "Oak Park Family Office" and "Oakpark Family Office" are the same name (speech-to-text splits words). */
+function sameIgnoringSpaces(a: string, b: string): boolean {
+  return normalizeName(a).replace(/ /g, "") === normalizeName(b).replace(/ /g, "");
+}
+
 /** Words treated as the same if equal or one is a prefix of the other ("pension" / "pensions"). */
 function sameWord(a: string, b: string): boolean {
   return a === b || (Math.min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a)));
@@ -118,7 +123,7 @@ export function runChecks(trade: ExtractedTrade, register: Register, now: Date =
 
     if (!trade.account_name) {
       checks.push(check("account_name_match", "warn", "account_name", "Account name not stated; confirm it on the callback.", account.account_name));
-    } else if (normalizeName(trade.account_name) === normalizeName(account.account_name)) {
+    } else if (sameIgnoringSpaces(trade.account_name, account.account_name)) {
       checks.push(check("account_name_match", "pass", "account_name", "Account name matches the register."));
     } else if (nameOverlap(trade.account_name, account.account_name) >= 0.5) {
       checks.push(
