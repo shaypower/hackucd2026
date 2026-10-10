@@ -185,3 +185,43 @@ export async function getRecordingSid(tradeId: string): Promise<string | null> {
   if (!data) throw new NotFoundError(`Trade ${tradeId} not found.`);
   return data.recording_sid;
 }
+
+// ---------- Automated callback calls ----------
+
+export interface CallbackCall {
+  call_sid: string;
+  trade_id: string;
+  to_number: string;
+  transcript: string;
+  turns: number;
+  silent_turns: number;
+  outcome: "matched" | "mismatched" | "incomplete" | "no_answer" | "failed" | null;
+}
+
+export async function insertCallbackCall(call: Pick<CallbackCall, "call_sid" | "trade_id" | "to_number">): Promise<void> {
+  const { error } = await db().from("callback_calls").insert(call);
+  if (error) fail("save callback call", error);
+}
+
+export async function getCallbackCall(callSid: string): Promise<CallbackCall | null> {
+  const { data, error } = await db().from("callback_calls").select("*").eq("call_sid", callSid).maybeSingle();
+  if (error) fail("load callback call", error);
+  return data as CallbackCall | null;
+}
+
+export async function updateCallbackCall(callSid: string, patch: Partial<Omit<CallbackCall, "call_sid" | "trade_id">>): Promise<void> {
+  const { error } = await db().from("callback_calls").update(patch).eq("call_sid", callSid);
+  if (error) fail("update callback call", error);
+}
+
+/** Saves a callback comparison and moves the trade to ready_to_approve / callback_mismatch. */
+export async function saveCallbackResult(callback: CallbackResult, meta: Record<string, unknown>, contactName: string | undefined): Promise<void> {
+  await insertCallback(callback);
+  await updateTrade(callback.trade_id, { status: callback.all_match ? "ready_to_approve" : "callback_mismatch" });
+  await addAudit(callback.trade_id, "callback_recorded", {
+    ...meta,
+    contact: contactName,
+    all_match: callback.all_match,
+    mismatched: callback.fields.filter((f) => !f.match).map((f) => f.field),
+  });
+}

@@ -145,6 +145,7 @@ export const AuditEventType = z.enum([
   "trade_created",
   "field_edited",
   "callback_recorded",
+  "callback_call", // automated callback call placed / ended
   "approved",
   "rejected",
   "exported",

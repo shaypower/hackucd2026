@@ -1,11 +1,11 @@
 "use client";
 // One trade's workspace (Dev A container): review → callback → approve → export, with its audit trail.
 // Used by /desk (freshly read trades) and /trades/[id] (saved trades).
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AuditTrail } from "@/components/audit/AuditTrail";
 import { CallbackPanel } from "@/components/callback/CallbackPanel";
 import { TradeReview } from "@/components/trade/TradeReview";
-import { ApiClientError, approveTrade, editTradeField, exportUrl, getTradeDetail, recordCallback } from "@/lib/api-client";
+import { ApiClientError, approveTrade, callContactNow, editTradeField, exportUrl, getTradeDetail, recordCallback } from "@/lib/api-client";
 import { approvalBlocker } from "@/lib/trades/approval";
 import { makeCallbackSamples } from "@/lib/trades/callback-samples";
 import type { TradeDetail, TradeField, UiError } from "@/lib/types";
@@ -16,13 +16,46 @@ function toUiError(error: unknown): UiError {
   return { code: "internal", message: "Something went wrong. Try again." };
 }
 
+const PHONE_LINE = Boolean(process.env.NEXT_PUBLIC_TELDEAL_PHONE);
+const CALL_POLL_MS = 3000;
+const CALL_TIMEOUT_MS = 4 * 60 * 1000;
+
 export function TradeWorkspace({ initial, openCallback = false }: { initial: TradeDetail; openCallback?: boolean }) {
   const [detail, setDetail] = useState(initial);
   const [busy, setBusy] = useState<"edit" | "callback" | "approve" | null>(null);
   const [error, setError] = useState<UiError | null>(null);
   const [callbackOpen, setCallbackOpen] = useState(openCallback);
+  const [calling, setCalling] = useState<{ to: string; redirected: boolean; status: string } | null>(null);
+  const callPoll = useRef<ReturnType<typeof setInterval> | null>(null);
   const { trade, callback, audit } = detail;
   const id = trade.id;
+
+  useEffect(() => () => void (callPoll.current && clearInterval(callPoll.current)), []);
+
+  async function callNow() {
+    setError(null);
+    try {
+      const placed = await callContactNow(id);
+      setCalling({ to: placed.to, redirected: placed.redirected, status: "Calling" });
+      const started = Date.now();
+      const auditBefore = detail.audit.length + 1; // + the "dialling" event
+      callPoll.current = setInterval(async () => {
+        const next = await getTradeDetail(id).catch(() => null);
+        if (!next) return;
+        setDetail(next);
+        const newEvents = next.audit.slice(auditBefore);
+        const ended = newEvents.some((e) => e.type === "callback_recorded" || (e.type === "callback_call" && e.payload.status !== "dialling"));
+        if (ended || Date.now() - started > CALL_TIMEOUT_MS) {
+          clearInterval(callPoll.current!);
+          setCalling(null);
+        } else {
+          setCalling((c) => c && { ...c, status: "On the call with" });
+        }
+      }, CALL_POLL_MS);
+    } catch (e) {
+      setError(toUiError(e));
+    }
+  }
 
   // Freshly read trades arrive without their audit trail; load it once.
   useEffect(() => {
@@ -71,6 +104,8 @@ export function TradeWorkspace({ initial, openCallback = false }: { initial: Tra
           samples={makeCallbackSamples(trade)}
           approved={approved}
           exportUrl={approved ? exportUrl(id) : undefined}
+          onCallNow={PHONE_LINE ? callNow : undefined}
+          calling={calling}
           onExport={() =>
             // The export is logged server-side; refresh the trail once the file has been generated.
             setTimeout(() => getTradeDetail(id).then(setDetail).catch(() => {}), 1500)

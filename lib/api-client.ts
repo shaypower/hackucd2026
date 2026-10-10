@@ -74,4 +74,14 @@ export function approveTrade(id: string): Promise<TradeDetail> {
   return send("POST", `/api/trades/${id}/approve`, undefined, detail);
 }
 
+export interface PlacedCall {
+  call_sid: string;
+  to: string; // masked
+  redirected: boolean; // demo: sent to DEMO_CALLBACK_NUMBER
+}
+
+export function callContactNow(id: string): Promise<PlacedCall> {
+  return send("POST", `/api/trades/${id}/call`, undefined, (d) => d as PlacedCall);
+}
+
 export const exportUrl = (id: string) => `/api/trades/${id}/export`;

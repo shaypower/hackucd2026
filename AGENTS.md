@@ -78,6 +78,7 @@ the route registry, global styles.
 - `lib/trades/approval.ts` - `callbackBlocker` / `approvalBlocker` workflow rules (server enforces, UI explains); `lib/trades/export.ts` - Payments `.xlsx`
 - `components/audit/AuditTrail.tsx` - v1 (handed over)
 - `lib/twilio/` - Twilio signature check + TwiML helpers; `lib/phone/process.ts` - recorded call → transcribe → extract → checks → saved phone trade; `/api/twilio/*` webhooks
+- `lib/callback-agent/` - automated callback: `dialogue.ts` (fixed wording, never reveals the instruction), `call.ts` (place call, run turns); `/api/trades/[id]/call` + `/api/twilio/callback/*`
 - `app/(app)/trade-workspace.tsx` - one trade's review → callback → approve → export container (used by /desk and /trades/[id]); `lib/trades/callback-samples.ts` - demo callbacks generated from a trade; `lib/trades/status.ts` - status labels/styles; `getDeskStats()` in `lib/db/trades.ts`
 - `lib/trades/diff.ts` - `diffTrades(original, callback)` field-by-field callback comparison; `components/callback/CallbackPanel.tsx` - v1 (handed over)
 
