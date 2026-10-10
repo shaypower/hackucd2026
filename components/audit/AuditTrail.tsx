@@ -56,6 +56,7 @@ function describe(e: AuditEvent): string {
         ? `Calling ${p.contact ?? "nominated contact"}${p.demo_redirected_to ? ` (demo: redirected to ${p.demo_redirected_to})` : ""}`
         : sentence(String(p.status ?? ""));
     case "callback_field_accepted":
+      if (p.corrected) return `${sentence(fieldName(p.field))}: heard ${value(p.from)}, corrected to ${value(p.to)} by the dealer`;
       return `${sentence(fieldName(p.field))}: ${value(p.callback)} accepted as ${value(p.original)}`;
     case "exported":
       return String(p.file ?? "");

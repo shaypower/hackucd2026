@@ -3,7 +3,8 @@
 import { ExtractionError, extractTrades } from "@/lib/ai/extract";
 import { apiError, handleErrors, readJson } from "@/lib/api/respond";
 import { getRegister } from "@/lib/db/get-register";
-import { addAudit, getTrade, getTradeDetail, insertCallback, latestCallback, updateCallbackFields, updateTrade } from "@/lib/db/trades";
+import { addAudit, getTrade, getTradeDetail, insertCallback, latestCallback, updateCallbackFields, updateCallbackHeard, updateTrade } from "@/lib/db/trades";
+import { applyEdit } from "@/lib/trades/edit";
 import { callbackBlocker } from "@/lib/trades/approval";
 import { acceptField, diffTrades, SOFT_FIELDS } from "@/lib/trades/diff";
 import { CallbackRequest, TradeField, type CallbackResult } from "@/lib/types";
@@ -63,13 +64,15 @@ export async function POST(request: Request, ctx: RouteContext<"/api/trades/[id]
 // PATCH /api/trades/[id]/callback { field } -> TradeDetail
 // The dealer accepts a name difference on the latest callback (e.g. speech-to-text spelling of the fund).
 // Key fields (direction, ISIN, account, amount, units/cash, currency) can never be accepted.
-const AcceptRequest = z.object({ field: TradeField });
+// { field, value } corrects what was heard on the callback (e.g. a speech-recognition slip); audited.
+const AcceptRequest = z.object({ field: TradeField, value: z.string().optional() });
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/trades/[id]/callback">) {
   const { id } = await ctx.params;
   const body = AcceptRequest.safeParse(await readJson(request));
   if (!body.success) return apiError("bad_request", "Send { field }.", 400);
-  const { field } = body.data;
+  const { field, value } = body.data;
+  if (value !== undefined) return correctHeard(id, field, value);
   if (!SOFT_FIELDS.includes(field)) {
     return apiError("conflict", "Key fields can't be accepted. If the contact really said something different, call them again.", 409, field);
   }
@@ -86,6 +89,26 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/trades/[id
     await updateCallbackFields(callback.id, fields, all_match);
     if (all_match && trade.status === "callback_mismatch") await updateTrade(id, { status: "ready_to_approve" });
     await addAudit(id, "callback_field_accepted", { field, original: diff.original, callback: diff.callback, all_match });
+    return Response.json(await getTradeDetail(id, register));
+  });
+}
+
+async function correctHeard(id: string, field: TradeField, value: string): Promise<Response> {
+  return handleErrors(async () => {
+    const { register } = await getRegister();
+    const trade = await getTrade(id, register);
+    const callback = await latestCallback(id);
+    if (trade.status === "approved") return apiError("conflict", "This trade is already approved.", 409);
+    if (!callback) return apiError("conflict", "Record a callback first.", 409);
+
+    const heard = applyEdit(callback.extracted, field, value);
+    const diff = diffTrades(trade.extracted, heard);
+    // Keep earlier "accepted" name differences.
+    const fields = diff.fields.map((f) => (callback.fields.find((o) => o.field === f.field)?.accepted && !f.match ? { ...f, match: true, accepted: true } : f));
+    const allMatch = fields.every((f) => f.match);
+    await updateCallbackHeard(callback.id, heard, fields, allMatch);
+    await updateTrade(id, { status: allMatch ? "ready_to_approve" : "callback_mismatch" });
+    await addAudit(id, "callback_field_accepted", { field, corrected: true, from: callback.extracted[field], to: heard[field], all_match: allMatch });
     return Response.json(await getTradeDetail(id, register));
   });
 }
