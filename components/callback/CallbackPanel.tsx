@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { FIELD_LABELS, MONO_FIELDS, display } from "@/components/trade/field-meta";
 import type { CallbackPanelProps } from "@/components/callback/types";
 import type { FieldDiff } from "@/lib/types";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 /** The TelDeal double rule: two hairlines when values agree, struck through when they differ. */
@@ -32,6 +33,50 @@ function Agreement({ diff, independent }: { diff: FieldDiff; independent: boolea
   );
 }
 
+/** The callback value, with an inline "Edit" so the dealer can correct a misheard value (audited server-side). */
+function CallbackValue({ diff, onSave, disabled }: { diff: FieldDiff; onSave?: (value: string) => void; disabled: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  if (editing && onSave) {
+    return (
+      <form
+        className="flex items-center gap-1.5 font-sans"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSave(draft);
+          setEditing(false);
+        }}
+      >
+        <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} className="h-8 w-40 text-[14px]" aria-label={`Correct ${FIELD_LABELS[diff.field]}`} />
+        <Button type="submit" size="sm" className="h-8" disabled={disabled}>
+          Save
+        </Button>
+        <Button type="button" size="sm" variant="ghost" className="h-8" onClick={() => setEditing(false)}>
+          Cancel
+        </Button>
+      </form>
+    );
+  }
+  return (
+    <span className="inline-flex flex-wrap items-baseline gap-x-2">
+      <span>{display(diff.callback, diff.field)}</span>
+      {onSave && (
+        <button
+          type="button"
+          disabled={disabled}
+          className="font-sans text-[12px] font-normal text-muted-foreground no-underline underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+          onClick={() => {
+            setDraft(diff.callback === null ? "" : String(diff.callback));
+            setEditing(true);
+          }}
+        >
+          Edit
+        </button>
+      )}
+    </span>
+  );
+}
+
 export function CallbackPanel({
   trade,
   contact,
@@ -50,7 +95,10 @@ export function CallbackPanel({
   calling = null,
   onAcceptField,
   acceptableFields = [],
+  onEditCallbackField,
 }: CallbackPanelProps) {
+  const editCallback = (field: FieldDiff["field"]) =>
+    !approved && onEditCallbackField ? (value: string) => onEditCallbackField(field, value) : undefined;
   const [transcript, setTranscript] = useState("");
   const [copied, setCopied] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
@@ -376,7 +424,7 @@ export function CallbackPanel({
                     <dd
                       className={cn("font-medium tabular-nums", mono && "font-mono text-[14px]", bad && "text-fail underline decoration-2 underline-offset-4")}
                     >
-                      {display(f.callback, f.field)}
+                      <CallbackValue diff={f} onSave={editCallback(f.field)} disabled={pending} />
                     </dd>
                   </dl>
                 </li>
@@ -438,7 +486,7 @@ export function CallbackPanel({
                           f.callback === null && !bad && "text-muted-foreground",
                         )}
                       >
-                        {display(f.callback, f.field)}
+                        <CallbackValue diff={f} onSave={editCallback(f.field)} disabled={pending} />
                       </td>
                       <td className="py-3">{outcome(f)}</td>
                     </tr>

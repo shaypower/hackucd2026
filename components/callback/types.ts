@@ -23,4 +23,6 @@ export interface CallbackPanelProps {
   // Optional: dealer accepts a name difference (fund / account name / speaker). Key fields can't be accepted.
   onAcceptField?: (field: TradeField) => void;
   acceptableFields?: TradeField[];
+  // Optional: correct what was heard on the callback (audited); the comparison is recalculated.
+  onEditCallbackField?: (field: TradeField, value: string) => void;
 }

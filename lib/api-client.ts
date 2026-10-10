@@ -92,6 +92,10 @@ export function acceptCallbackField(id: string, field: TradeField): Promise<Trad
   return send("PATCH", `/api/trades/${id}/callback`, { field }, detail);
 }
 
+export function editCallbackField(id: string, field: TradeField, value: string): Promise<TradeDetail> {
+  return send("PATCH", `/api/trades/${id}/callback`, { field, value }, detail);
+}
+
 export interface PlacedCall {
   call_sid: string;
   to: string; // masked

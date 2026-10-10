@@ -239,3 +239,8 @@ export async function updateCallbackFields(callbackId: string, fields: FieldDiff
   const { error } = await db().from("callbacks").update({ fields, all_match: allMatch }).eq("id", callbackId);
   if (error) fail("update callback", error);
 }
+
+export async function updateCallbackHeard(callbackId: string, extracted: ExtractedTrade, fields: FieldDiff[], allMatch: boolean): Promise<void> {
+  const { error } = await db().from("callbacks").update({ extracted, fields, all_match: allMatch }).eq("id", callbackId);
+  if (error) fail("update callback", error);
+}
