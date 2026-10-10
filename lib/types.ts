@@ -186,6 +186,33 @@ export type EditFieldRequest = z.infer<typeof EditFieldRequest>;
 export const CallbackRequest = CreateTradeRequest;
 export type CallbackRequest = CreateTradeRequest;
 
+export const RegisterSource = z.enum(["database", "demo"]);
+export type RegisterSource = z.infer<typeof RegisterSource>;
+
+// POST /api/extract (stateless: trades are checked but not saved yet)
+export const ExtractRequest = CreateTradeRequest;
+export type ExtractRequest = CreateTradeRequest;
+
+export const ExtractResponse = z.object({
+  trades: z.array(Trade),
+  unreadable_reason: z.string().nullable(),
+  register_source: RegisterSource,
+  model: z.string(),
+});
+export type ExtractResponse = z.infer<typeof ExtractResponse>;
+
+// POST /api/check: re-run checks after the agent edits a field
+export const CheckRequest = z.object({ extracted: ExtractedTrade });
+export type CheckRequest = z.infer<typeof CheckRequest>;
+
+export const CheckResponse = z.object({
+  checks: z.array(Check),
+  status: TradeStatus,
+  nominated_callback: Contact.nullable(),
+  register_source: RegisterSource,
+});
+export type CheckResponse = z.infer<typeof CheckResponse>;
+
 // GET /api/trades/[id]
 export const TradeDetail = z.object({
   trade: Trade,

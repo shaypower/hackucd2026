@@ -68,6 +68,11 @@ the route registry, global styles.
 - `lib/validation/register.ts` - `Register` types and lookups (`findFund`, `findAccount`, `nominatedContact`...)
 - `lib/validation/demo-register.ts` - demo funds/accounts/callers; single source for tests and the DB seed
 - `lib/db/client.ts` - server-only `db()` Supabase client (secret key); `lib/db/register.ts` - `loadRegister()`
+- `lib/db/get-register.ts` - `getRegister()`: DB register if seeded, else the demo register (reports which)
+- `lib/ai/extract.ts` - `extractTrades(transcript)` via OpenRouter (default `anthropic/claude-haiku-5.5`, override `OPENROUTER_MODEL`); `lib/ai/postprocess.ts` cleans output and drops invented evidence
+- `lib/trades/build.ts` - `buildTrade()` extracted → checked `Trade`; `lib/trades/edit.ts` - `applyEdit()` parses an agent's edit
+- `lib/api/respond.ts` - `apiError()` typed error responses; `lib/api-client.ts` - typed browser client (`extractCall`, `recheckTrade`)
+- `components/trade/TradeInput.tsx`, `TradeReview.tsx` - v1 components (handed over to Dev B for styling)
 
 <!-- BEGIN:nextjs-agent-rules -->
 
