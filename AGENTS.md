@@ -81,6 +81,9 @@ the route registry, global styles.
 - `lib/callback-agent/` - automated callback: `dialogue.ts` (fixed wording, never reveals the instruction), `call.ts` (place call, run turns); `/api/trades/[id]/call` + `/api/twilio/callback/*`
 - `app/(app)/trade-workspace.tsx` - one trade's review → callback → approve → export container (used by /desk and /trades/[id]); `lib/trades/callback-samples.ts` - demo callbacks generated from a trade; `lib/trades/status.ts` - status labels/styles; `getDeskStats()` in `lib/db/trades.ts`
 - `lib/trades/diff.ts` - `diffTrades(original, callback)` field-by-field callback comparison; `components/callback/CallbackPanel.tsx` - v1 (handed over)
+- `components/shell/stage.tsx` - `Stage` (dark case band: kicker, serif title, facts) + `StageTrack` (Capture → Verify → Callback → Release)
+- `components/shell/status-mark.tsx` - `StatusMark` pass/warn/fail as icon + word; theme colours `text-pass`, `bg-fail-wash`, `bg-hilite`... in `app/globals.css`
+- `/dev/gallery` - Dev B's gallery of identity, shell and component states
 
 <!-- BEGIN:nextjs-agent-rules -->
 
