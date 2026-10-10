@@ -117,17 +117,42 @@ export interface TradeSummary {
   isin: string | null;
   account_no: string | null;
   quantity: number | null;
+  blocked: boolean; // at least one failed check
 }
 
 export async function listRecentTrades(limit = 20): Promise<TradeSummary[]> {
   const { data, error } = await db()
     .from("trades")
-    .select("id, status, created_at, extracted")
+    .select("id, status, created_at, extracted, checks")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) fail("list trades", error);
   return (data ?? []).map((r) => {
     const e = r.extracted as ExtractedTrade;
-    return { id: r.id, status: r.status, created_at: r.created_at, direction: e.direction, isin: e.isin, account_no: e.account_no, quantity: e.quantity };
+    const blocked = (r.checks as Check[]).some((c) => c.status === "fail");
+    return { id: r.id, status: r.status, created_at: r.created_at, direction: e.direction, isin: e.isin, account_no: e.account_no, quantity: e.quantity, blocked };
   });
+}
+
+export interface DeskStats {
+  trades: number;
+  blockedByChecks: number; // instructions that failed a check when captured
+  callbackMismatches: number; // callbacks that disagreed with the original
+  approved: number;
+  exported: number;
+}
+
+/** Live counts from the audit trail (small demo dataset, so a single scan is fine). */
+export async function getDeskStats(): Promise<DeskStats> {
+  const { data, error } = await db().from("audit_events").select("trade_id, type, payload");
+  if (error) fail("load stats", error);
+  const rows = (data ?? []) as { trade_id: string; type: AuditEventType; payload: Record<string, unknown> }[];
+  const tradesWith = (pred: (r: (typeof rows)[number]) => boolean) => new Set(rows.filter(pred).map((r) => r.trade_id)).size;
+  return {
+    trades: tradesWith((r) => r.type === "trade_created"),
+    blockedByChecks: tradesWith((r) => r.type === "trade_created" && Number(r.payload.checks_failed ?? 0) > 0),
+    callbackMismatches: rows.filter((r) => r.type === "callback_recorded" && r.payload.all_match === false).length,
+    approved: tradesWith((r) => r.type === "approved"),
+    exported: tradesWith((r) => r.type === "exported"),
+  };
 }

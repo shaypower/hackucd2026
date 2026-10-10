@@ -1,0 +1,39 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { TradeWorkspace } from "../../trade-workspace";
+import { getRegister } from "@/lib/db/get-register";
+import { getTradeDetail, NotFoundError } from "@/lib/db/trades";
+import { STATUS_LABEL } from "@/lib/trades/status";
+
+async function SavedTrade({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { register } = await getRegister();
+  const detail = await getTradeDetail(id, register).catch((e) => {
+    if (e instanceof NotFoundError) notFound();
+    throw e;
+  });
+  const received = new Date(detail.trade.created_at).toLocaleString("en-IE", { timeZone: "Europe/Dublin", dateStyle: "medium", timeStyle: "short" });
+  return (
+    <>
+      <p className="text-sm text-muted-foreground">
+        Received {received} · {STATUS_LABEL[detail.trade.status]} · <span className="font-mono">{detail.trade.id}</span>
+      </p>
+      <TradeWorkspace initial={detail} />
+    </>
+  );
+}
+
+export default function TradePage({ params }: PageProps<"/trades/[id]">) {
+  return (
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6">
+      <Link href="/trades" className="text-sm text-muted-foreground hover:underline">
+        ← All trades
+      </Link>
+      <h1 className="text-2xl font-semibold tracking-tight">Trade</h1>
+      <Suspense fallback={<p className="text-muted-foreground">Loading trade…</p>}>
+        <SavedTrade params={params} />
+      </Suspense>
+    </main>
+  );
+}
