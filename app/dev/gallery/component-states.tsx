@@ -24,6 +24,19 @@ import { cn } from "@/lib/utils";
 
 const noop = () => {};
 const audioSamples = [{ id: "oakpark", label: "Sample recording (47 s)", url: "/samples/oakpark-subscription.mp3" }];
+const nameDiffers = {
+  ...mockCallbackMatch,
+  id: "cbk_name",
+  all_match: false,
+  fields: mockCallbackMatch.fields.map((f) => (f.field === "account_name" ? { ...f, callback: "Harbourview Pensions", match: false } : f)),
+};
+const nameAccepted = {
+  ...nameDiffers,
+  id: "cbk_name_ok",
+  all_match: true,
+  fields: nameDiffers.fields.map((f) => (f.field === "account_name" ? { ...f, match: true, accepted: true } : f)),
+};
+const SOFT = ["account_name", "fund_name", "caller_name"] as const;
 const mismatchReason = `Callback doesn't match: ${mockCallbackMismatch.fields
   .filter((f) => !f.match)
   .map((f) => f.field.replace("_", " "))
@@ -260,6 +273,48 @@ const callbackPanel: State[] = [
         onApprove={noop}
         onCallNow={noop}
         calling={{ status: "dialling", to: "+353 •• ••• 0199", redirected: true }}
+      />
+    ),
+  },
+  {
+    id: "cb-name",
+    label: "Name differs",
+    kind: "warn",
+    note: "onAcceptField · acceptableFields",
+    render: () => (
+      <CallbackPanel
+        trade={mockTradeClean}
+        contact={mockContact}
+        callback={nameDiffers}
+        pending={false}
+        error={null}
+        onSubmitCallback={noop}
+        canApprove={false}
+        approveBlockedReason="Callback doesn't match: account name. Don't deal; escalate or call again."
+        onApprove={noop}
+        onAcceptField={noop}
+        acceptableFields={[...SOFT]}
+      />
+    ),
+  },
+  {
+    id: "cb-accepted",
+    label: "Name accepted",
+    kind: "ok",
+    note: "accepted: true",
+    render: () => (
+      <CallbackPanel
+        trade={mockTradeClean}
+        contact={mockContact}
+        callback={nameAccepted}
+        pending={false}
+        error={null}
+        onSubmitCallback={noop}
+        canApprove
+        approveBlockedReason={null}
+        onApprove={noop}
+        onAcceptField={noop}
+        acceptableFields={[...SOFT]}
       />
     ),
   },
