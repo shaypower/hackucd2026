@@ -200,6 +200,7 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
           {trade.nominated_callback && (
             <p className="text-sm text-muted-foreground">
               Callback contact (from the register): <strong>{trade.nominated_callback.name}</strong>, {trade.nominated_callback.phone}
+              {trade.nominated_callback.dialled_phone && <> · <span className="text-sky-700 dark:text-sky-300">demo: calls go to {trade.nominated_callback.dialled_phone}</span></>}
             </p>
           )}
 

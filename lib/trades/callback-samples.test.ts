@@ -20,3 +20,11 @@ describe("makeCallbackSamples", () => {
     expect(makeCallbackSamples({ ...mockTradeClean, extracted: { ...mockTradeClean.extracted, isin: null } })).toEqual([]);
   });
 });
+
+describe("maskPhone", () => {
+  it("shows only the prefix and last four digits", async () => {
+    const { maskPhone } = await import("@/lib/trades/build");
+    expect(maskPhone("+353872256643")).toBe("+353 87 ••• 6643");
+    expect(maskPhone("+353 87 225 6643")).toBe("+353 87 ••• 6643");
+  });
+});
