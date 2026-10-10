@@ -62,6 +62,10 @@ the route registry, global styles.
 - `lib/types.ts` - zod schemas + types shared by API, pages and components (Trade, Check, CallbackResult, AuditEvent, ApiError...)
 - `components/{trade,callback,audit,billing}/types.ts` - props contracts for presentational components
 - `lib/mocks.ts` - mock trades/callbacks/audit/subscription/errors covering every UI state (for `/dev/gallery` and tests)
+- `lib/validation/checks.ts` - `runChecks(trade, register, now)` → `Check[]`; `canProceed`, `statusFromChecks`
+- `lib/validation/isin.ts` - ISIN normalise/format/check digit + `closestIsin` suggestions
+- `lib/validation/register.ts` - `Register` types and lookups (`findFund`, `findAccount`, `nominatedContact`...)
+- `lib/validation/demo-register.ts` - demo funds/accounts/callers; single source for tests and the DB seed
 
 <!-- BEGIN:nextjs-agent-rules -->
 
