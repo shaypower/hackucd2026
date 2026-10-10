@@ -241,7 +241,7 @@ export function TradeInput({
               </ul>
             </section>
           ) : (
-            <p className="text-[13px] text-muted-foreground">Or paste the call transcript.</p>
+            <p className="text-[13px] text-muted-foreground">{onAudio ? "Or paste the call transcript." : "Paste the call transcript."}</p>
           )}
         </div>
 
