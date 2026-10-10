@@ -10,11 +10,24 @@ export interface SampleTranscript {
 }
 
 // /desk: paste or pick a call transcript, then extract.
+export interface AudioSample {
+  id: string;
+  label: string;
+  url: string; // under /public
+}
+
 export interface TradeInputProps {
   samples: SampleTranscript[];
   pending: boolean; // extraction in progress
   error: UiError | null;
   onSubmit: (transcript: string) => void;
+  // Optional: controlled transcript (e.g. filled in by transcription)
+  transcript?: string;
+  onTranscriptChange?: (transcript: string) => void;
+  // Optional: audio input. The component records/picks audio; the page transcribes it.
+  onAudio?: (audio: Blob, label: string) => void;
+  transcribing?: boolean;
+  audioSamples?: AudioSample[];
 }
 
 // /trades/[id]: transcript with highlighted evidence next to the extracted fields and their checks.

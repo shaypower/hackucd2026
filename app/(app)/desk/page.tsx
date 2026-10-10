@@ -14,10 +14,13 @@ export default function DeskPage() {
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Dealing desk</h1>
         <p className="text-muted-foreground">
-          Paste a phone instruction. The AI reads it, then every field is checked against the fund register. The AI never approves anything.
+          Record or upload a call, or paste a transcript. The AI reads it, then every field is checked against the fund register. The AI never approves anything.
         </p>
       </header>
-      <DeskClient samples={mockSamples} />
+      <DeskClient
+        samples={mockSamples}
+        audioSamples={[{ id: "oakpark", label: "Sample recording (47 s)", url: "/samples/oakpark-subscription.mp3" }]}
+      />
     </main>
   );
 }

@@ -31,6 +31,15 @@ describe("ordinary input", () => {
     expect(byId(run({ isin: "ie00 b4l5 y983" }), "isin_in_register")?.status).toBe("pass");
   });
 
+  it("matches account names that differ only in spacing (speech-to-text)", () => {
+    const checks = runChecks(
+      { ...clean, account_no: "40031", account_name: "Oak Park Family Office", caller_name: "Peter Quinn" },
+      demoRegister,
+      MORNING,
+    );
+    expect(byId(checks, "account_name_match")?.status).toBe("pass");
+  });
+
   it("matches account and caller names regardless of case and punctuation", () => {
     const checks = run({ account_name: "harbourview pension trustees.", caller_name: "MARK DOYLE" });
     expect(byId(checks, "account_name_match")?.status).toBe("pass");

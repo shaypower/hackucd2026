@@ -4,8 +4,9 @@ import { useState } from "react";
 import { CallbackPanel } from "@/components/callback/CallbackPanel";
 import { TradeInput } from "@/components/trade/TradeInput";
 import { TradeReview } from "@/components/trade/TradeReview";
-import type { SampleTranscript } from "@/components/trade/types";
-import { ApiClientError, checkCallback, extractCall, recheckTrade } from "@/lib/api-client";
+import type { AudioSample, SampleTranscript } from "@/components/trade/types";
+import { ApiClientError, checkCallback, extractCall, recheckTrade, transcribeAudio } from "@/lib/api-client";
+import { toWav16kMono } from "@/lib/audio/wav";
 import { applyEdit, EditError } from "@/lib/trades/edit";
 import { mockCallbackSamples } from "@/lib/mocks";
 import type { CallbackResult, ExtractResponse, Trade, TradeField, UiError } from "@/lib/types";
@@ -28,7 +29,10 @@ function approveBlockedReason(trade: Trade, callback: CallbackResult | undefined
   return null;
 }
 
-export function DeskClient({ samples }: { samples: SampleTranscript[] }) {
+export function DeskClient({ samples, audioSamples }: { samples: SampleTranscript[]; audioSamples: AudioSample[] }) {
+  const [transcript, setTranscript] = useState("");
+  const [transcribing, setTranscribing] = useState(false);
+  const [audioNote, setAudioNote] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<UiError | null>(null);
   const [result, setResult] = useState<Omit<ExtractResponse, "trades"> | null>(null);
@@ -58,6 +62,26 @@ export function DeskClient({ samples }: { samples: SampleTranscript[] }) {
       setExtractError(toUiError(error));
     } finally {
       setExtracting(false);
+    }
+  }
+
+  async function handleAudio(audio: Blob, label: string) {
+    setTranscribing(true);
+    setExtractError(null);
+    setAudioNote(null);
+    try {
+      const { wav, seconds } = await toWav16kMono(audio).catch((e: Error) => {
+        throw new ApiClientError({ code: "bad_request", message: e.message.startsWith("Recording is") ? e.message : "Couldn't read that audio file." });
+      });
+      const result = await transcribeAudio(wav);
+      setTranscript(result.transcript);
+      setAudioNote(`${label}: ${Math.round(seconds)} s transcribed by ${result.model}. Check the transcript against the audio, then it's read below.`);
+      setTranscribing(false);
+      await handleExtract(result.transcript);
+    } catch (error) {
+      setExtractError(toUiError(error));
+    } finally {
+      setTranscribing(false);
     }
   }
 
@@ -102,7 +126,19 @@ export function DeskClient({ samples }: { samples: SampleTranscript[] }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <TradeInput samples={samples} pending={extracting} error={extractError} onSubmit={handleExtract} />
+      <TradeInput
+        samples={samples}
+        pending={extracting}
+        error={extractError}
+        onSubmit={handleExtract}
+        transcript={transcript}
+        onTranscriptChange={setTranscript}
+        onAudio={handleAudio}
+        transcribing={transcribing}
+        audioSamples={audioSamples}
+      />
+
+      {audioNote && <p className="text-xs text-muted-foreground">{audioNote}</p>}
 
       {result && (
         <p className="text-xs text-muted-foreground">

@@ -221,6 +221,10 @@ export const CallbackCheckRequest = z.object({
 });
 export type CallbackCheckRequest = z.infer<typeof CallbackCheckRequest>;
 
+// POST /api/transcribe (multipart "audio") -> transcript text
+export const TranscribeResponse = z.object({ transcript: z.string(), model: z.string() });
+export type TranscribeResponse = z.infer<typeof TranscribeResponse>;
+
 // GET /api/trades/[id]
 export const TradeDetail = z.object({
   trade: Trade,
