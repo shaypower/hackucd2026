@@ -17,4 +17,7 @@ export interface CallbackPanelProps {
   approved?: boolean;
   exportUrl?: string; // Payments .xlsx, shown once approved
   onExport?: () => void; // called when the download starts
+  // Optional automated callback by phone (TelDeal's agent calls the nominated contact)
+  onCallNow?: () => void;
+  calling?: { to: string; redirected: boolean; status: string } | null;
 }

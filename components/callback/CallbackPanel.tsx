@@ -40,6 +40,8 @@ export function CallbackPanel({
   approved = false,
   exportUrl,
   onExport,
+  onCallNow,
+  calling = null,
 }: CallbackPanelProps) {
   const [transcript, setTranscript] = useState("");
 
@@ -68,6 +70,27 @@ export function CallbackPanel({
           </Alert>
         )}
 
+        {!approved && onCallNow && (
+          <div className="flex flex-col gap-2 rounded-md border border-sky-300 bg-sky-50 p-3 dark:border-sky-800 dark:bg-sky-950/40">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" disabled={pending || calling !== null} onClick={onCallNow}>
+                📞 Call {contact?.name ?? "contact"} now
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                TelDeal&apos;s agent asks them to <strong>state</strong> the instruction (it never reads it out), then compares it field by field.
+              </span>
+            </div>
+            {calling && (
+              <p className="text-sm" role="status">
+                <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-sky-600" />
+                {calling.status} {calling.to}
+                {calling.redirected && <span className="text-muted-foreground"> (demo: redirected from the register number)</span>}. The result appears here
+                automatically.
+              </p>
+            )}
+          </div>
+        )}
+
         {!approved && (
           <form
             className="flex flex-col gap-2"
@@ -87,7 +110,7 @@ export function CallbackPanel({
               </div>
             )}
             <label htmlFor={`cb-${trade.id}`} className="text-sm font-medium">
-              Callback transcript
+              {onCallNow ? "Or paste a callback transcript" : "Callback transcript"}
             </label>
             <Textarea id={`cb-${trade.id}`} rows={6} value={transcript} onChange={(e) => setTranscript(e.target.value)} disabled={pending} className="font-mono text-sm" />
             <div>

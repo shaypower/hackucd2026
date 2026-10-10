@@ -6,6 +6,7 @@ const LABELS: Record<AuditEvent["type"], string> = {
   trade_created: "Instruction captured",
   field_edited: "Field corrected",
   callback_recorded: "Callback recorded",
+  callback_call: "Callback call",
   approved: "Approved",
   rejected: "Rejected",
   exported: "Exported to Payments",
@@ -19,9 +20,16 @@ function describe(e: AuditEvent): string {
     case "field_edited":
       return `${String(p.field)}: ${JSON.stringify(p.from)} → ${JSON.stringify(p.to)}`;
     case "callback_recorded":
-      return p.all_match
-        ? `${p.contact ?? "Contact"} confirmed every field`
-        : `${p.contact ?? "Contact"} disagreed on: ${(p.mismatched as string[] | undefined)?.join(", ")}`;
+      return (
+        (p.all_match
+          ? `${p.contact ?? "Contact"} confirmed every field`
+          : `${p.contact ?? "Contact"} disagreed on: ${(p.mismatched as string[] | undefined)?.join(", ")}`) +
+        (p.channel === "phone" ? " (automated phone callback)" : "")
+      );
+    case "callback_call":
+      return p.status === "dialling"
+        ? `Calling ${p.contact ?? "nominated contact"}${p.demo_redirected_to ? ` (demo: redirected to ${p.demo_redirected_to})` : ""}`
+        : String(p.status ?? "");
     case "exported":
       return String(p.file ?? "");
     default:
