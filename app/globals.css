@@ -325,6 +325,32 @@
     transform: scaleX(0);
   }
 }
+/* Indeterminate progress: a short bar sweeping across. */
+@keyframes td-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+.td-progress {
+  animation: td-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+/* Live audio level bars while recording or transcribing. */
+@keyframes td-level {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.td-level {
+  transform-origin: bottom;
+  animation: td-level 0.9s ease-in-out infinite;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,
