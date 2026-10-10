@@ -25,7 +25,11 @@ function CheckLine({ check, pending, onUse }: { check: Check; pending: boolean; 
   const Icon = ICON[check.status];
   return (
     <li className="grid grid-cols-[16px_minmax(0,1fr)] gap-2.5 border-t border-border py-2 text-[13px] first:border-t-0">
-      <Icon aria-label={check.status === "pass" ? "Passed" : check.status === "warn" ? "Needs review" : "Failed"} className={cn("mt-0.5 size-4", ICON_TONE[check.status])} strokeWidth={2.2} />
+      <Icon
+        aria-label={check.status === "pass" ? "Passed" : check.status === "warn" ? "Needs review" : "Failed"}
+        className={cn("mt-0.5 size-4", ICON_TONE[check.status])}
+        strokeWidth={2.2}
+      />
       <span>
         {check.message}
         {onUse && (
@@ -42,19 +46,26 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
   const [selected, setSelected] = useState<TradeField | null>(null);
   const [editing, setEditing] = useState<TradeField | null>(null);
   const [draft, setDraft] = useState("");
+  // The edit form stays open until the save succeeds, so a failed save keeps what the agent typed.
+  const [submitted, setSubmitted] = useState<TradeField | null>(null);
+  const saved = submitted !== null && submitted === editing && !pending && !error;
+  const openEdit = saved ? null : editing;
   const quoteEls = useRef(new Map<TradeField, HTMLElement>());
   const rowEls = useRef(new Map<TradeField, HTMLElement>());
 
   const { transcript, extracted, checks } = trade;
   const lines = useMemo(() => scriptLines(segments(transcript, extracted.evidence)), [transcript, extracted.evidence]);
-  const quoted = useMemo(() => new Set(extracted.evidence.filter((e) => e.quote && transcript.includes(e.quote)).map((e) => e.field)), [extracted.evidence, transcript]);
+  const quoted = useMemo(
+    () => new Set(extracted.evidence.filter((e) => e.quote && transcript.includes(e.quote)).map((e) => e.field)),
+    [extracted.evidence, transcript],
+  );
 
   const overall = worst(checks) ?? "pass";
   const counts = { pass: 0, warn: 0, fail: 0 };
   for (const c of checks) counts[c.status]++;
   const tradeChecks = checks.filter((c) => c.field === null).sort(byRank);
   const approved = trade.status === "approved";
-  const ref = (f: TradeField) => FIELDS.indexOf(f) + 1;
+  const fieldNo = (f: TradeField) => FIELDS.indexOf(f) + 1;
 
   function selectFromRow(field: TradeField) {
     const next = selected === field ? null : field;
@@ -63,7 +74,8 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
     if (next) requestAnimationFrame(() => scrollNear(quoteEls.current.get(next)));
   }
   function selectFromQuote(fields: TradeField[]) {
-    const next = fields.includes(selected as TradeField) && fields.length > 1 ? fields[(fields.indexOf(selected as TradeField) + 1) % fields.length] : fields[0];
+    const next =
+      fields.includes(selected as TradeField) && fields.length > 1 ? fields[(fields.indexOf(selected as TradeField) + 1) % fields.length] : fields[0];
     setSelected(next);
     setEditing(null);
     requestAnimationFrame(() => scrollNear(rowEls.current.get(next)));
@@ -71,6 +83,7 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
   function startEdit(field: TradeField) {
     const value = extracted[field];
     setDraft(value === null ? "" : String(value));
+    setSubmitted(null);
     setEditing(field);
   }
 
@@ -80,16 +93,31 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
   const next = approved
     ? { tone: "pass" as const, title: "Approved", text: "This trade is approved and locked." }
     : failing.length > 0
-      ? { tone: "fail" as const, title: `Blocked · ${failing.length} failed check${failing.length > 1 ? "s" : ""}`, text: `${failing[0].message} Fix it before calling back.` }
+      ? {
+          tone: "fail" as const,
+          title: `Blocked · ${failing.length} failed check${failing.length > 1 ? "s" : ""}`,
+          text: `${failing[0].message} Fix it before calling back.`,
+        }
       : warning.length > 0
-        ? { tone: "warn" as const, title: `Review ${warning.length} warning${warning.length > 1 ? "s" : ""}`, text: contact ? `Then call back ${contact.name} on the registered number.` : "Then call back the registered contact." }
-        : { tone: "pass" as const, title: "Ready for callback", text: contact ? `Next: call back ${contact.name} on ${contact.phone}, from the register.` : "Next: call back the registered contact." };
+        ? {
+            tone: "warn" as const,
+            title: `Review ${warning.length} warning${warning.length > 1 ? "s" : ""}`,
+            text: contact ? `Then call back ${contact.name} on the registered number.` : "Then call back the registered contact.",
+          }
+        : {
+            tone: "pass" as const,
+            title: "Ready for callback",
+            text: contact ? `Next: call back ${contact.name} on ${contact.phone}, from the register.` : "Next: call back the registered contact.",
+          };
   const NextIcon = ICON[next.tone];
 
   const title = [display(extracted.direction, "direction"), extracted.isin].filter((v) => v && v !== "—").join(" ") || "Trade";
 
   return (
-    <section aria-label={`Review: ${title}`} className="relative animate-in overflow-hidden rounded-xl border border-border bg-paper duration-500 ease-out fade-in slide-in-from-bottom-2">
+    <section
+      aria-label={`Review: ${title}`}
+      className="relative animate-in overflow-hidden rounded-xl border border-border bg-paper duration-500 ease-out fade-in slide-in-from-bottom-2"
+    >
       {pending && (
         <div role="progressbar" aria-label="Saving" className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-copper/15">
           <div className="td-progress h-full w-1/3 bg-copper" />
@@ -104,8 +132,9 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
           </p>
           <h2 className="mt-1.5 font-serif text-[28px] leading-tight tracking-[-0.015em]">{title}</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {[extracted.fund_name, extracted.account_name && `${extracted.account_name}${extracted.account_no ? ` · ${extracted.account_no}` : ""}`].filter(Boolean).join(" · ") ||
-              "Fund and account not stated"}
+            {[extracted.fund_name, extracted.account_name && `${extracted.account_name}${extracted.account_no ? ` · ${extracted.account_no}` : ""}`]
+              .filter(Boolean)
+              .join(" · ") || "Fund and account not stated"}
           </p>
         </div>
         <div className="flex flex-col items-start gap-1.5 sm:items-end">
@@ -133,10 +162,20 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
           <ol className="max-h-[26rem] overflow-y-auto pr-2 [scrollbar-width:thin]">
             {lines.map((line, i) => (
               <li key={i} className="grid grid-cols-1 gap-x-3 gap-y-0.5 py-1.5 sm:grid-cols-[64px_minmax(0,1fr)]">
-                <span className={cn("font-mono text-[10.5px] sm:pt-1 tracking-[0.08em] uppercase", line.speaker && /caller|client|contact/i.test(line.speaker) ? "text-foreground" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "font-mono text-[10.5px] sm:pt-1 tracking-[0.08em] uppercase",
+                    line.speaker && /caller|client|contact/i.test(line.speaker) ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
                   {line.speaker ?? ""}
                 </span>
-                <p className={cn("font-serif text-[16.5px] leading-relaxed", line.speaker && /agent|desk/i.test(line.speaker) ? "text-muted-foreground" : "text-foreground")}>
+                <p
+                  className={cn(
+                    "font-serif text-[16.5px] leading-relaxed",
+                    line.speaker && /agent|desk/i.test(line.speaker) ? "text-muted-foreground" : "text-foreground",
+                  )}
+                >
                   {line.parts.map((p, j) =>
                     p.fields.length === 0 ? (
                       <span key={j}>{p.text}</span>
@@ -156,7 +195,7 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
                         )}
                       >
                         {p.text}
-                        <sup className="ml-0.5 font-mono text-[9.5px] text-copper-ink">{p.fields.map(ref).join(",")}</sup>
+                        <sup className="ml-0.5 font-mono text-[9.5px] text-copper-ink">{p.fields.map(fieldNo).join(",")}</sup>
                       </button>
                     ),
                   )}
@@ -192,6 +231,7 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
                   <button
                     type="button"
                     aria-expanded={isSel}
+                    aria-controls={isSel ? `field-${trade.id}-${field}` : undefined}
                     onClick={() => selectFromRow(field)}
                     className={cn(
                       "grid w-full grid-cols-[26px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-t-lg px-1.5 py-2.5 text-left transition-colors duration-200 hover:bg-background/70 sm:grid-cols-[26px_104px_minmax(0,1fr)_auto]",
@@ -205,27 +245,32 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
                         isSel && quoted.has(field) && "border-copper bg-copper text-white",
                       )}
                     >
-                      {ref(field)}
+                      {fieldNo(field)}
                     </span>
                     <span className="text-[13px] text-muted-foreground">{FIELD_LABELS[field]}</span>
-                    <span className={cn("col-start-2 min-w-0 truncate text-[17px] font-medium tabular-nums sm:col-start-auto", MONO_FIELDS.has(field) && "font-mono text-[15px] tracking-[0.02em]", extracted[field] === null && "text-muted-foreground")}>
+                    <span
+                      className={cn(
+                        "col-start-2 min-w-0 truncate text-[17px] font-medium tabular-nums sm:col-start-auto",
+                        MONO_FIELDS.has(field) && "font-mono text-[15px] tracking-[0.02em]",
+                        extracted[field] === null && "text-muted-foreground",
+                      )}
+                    >
                       {display(extracted[field], field)}
                     </span>
                     <span className="col-start-3 row-span-2 row-start-1 justify-self-end sm:col-start-auto sm:row-span-1 sm:row-start-auto">
-                      {status ? (
-                        <StatusMark status={status} />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No check</span>
-                      )}
+                      {status ? <StatusMark status={status} /> : <span className="text-xs text-muted-foreground">No check</span>}
                     </span>
                   </button>
 
                   {isSel && (
-                    <div className="animate-in rounded-b-lg bg-background px-1.5 pt-1 pb-4 duration-200 fade-in slide-in-from-top-1 sm:pl-[38px]">
+                    <div
+                      id={`field-${trade.id}-${field}`}
+                      className="animate-in rounded-b-lg bg-background px-1.5 pt-1 pb-4 duration-200 fade-in slide-in-from-top-1 sm:pl-[38px]"
+                    >
                       {quote ? (
                         <>
                           <p className="font-serif text-[19px] leading-snug">“{quote}”</p>
-                          <p className="mt-1 mb-3 font-mono text-[11px] text-muted-foreground">quote {ref(field)} · exact words from the call</p>
+                          <p className="mt-1 mb-3 font-mono text-[11px] text-muted-foreground">quote {fieldNo(field)} · exact words from the call</p>
                         </>
                       ) : (
                         <p className="mb-3 font-serif text-[16px] text-muted-foreground italic">Not stated in the call. Nothing to quote.</p>
@@ -242,20 +287,26 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
                           ))}
                         </ul>
                       )}
-                      {approved ? null : editing === field ? (
+                      {approved ? null : openEdit === field ? (
                         <form
                           className="flex animate-in flex-col gap-2 duration-200 fade-in"
                           onSubmit={(e) => {
                             e.preventDefault();
+                            setSubmitted(field);
                             onEditField(field, draft);
-                            setEditing(null);
                           }}
                         >
                           <label htmlFor={`edit-${field}`} className="text-[12.5px] font-semibold">
                             New value for {FIELD_LABELS[field].toLowerCase()}
                           </label>
                           <div className="flex flex-wrap gap-2">
-                            <Input id={`edit-${field}`} autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} className={cn("h-9 max-w-xs bg-white", MONO_FIELDS.has(field) && "font-mono")} />
+                            <Input
+                              id={`edit-${field}`}
+                              autoFocus
+                              value={draft}
+                              onChange={(e) => setDraft(e.target.value)}
+                              className={cn("h-9 max-w-xs bg-card", MONO_FIELDS.has(field) && "font-mono")}
+                            />
                             <Button type="submit" disabled={pending || draft === String(extracted[field] ?? "")}>
                               Save
                             </Button>
@@ -263,7 +314,9 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
                               Cancel
                             </Button>
                           </div>
-                          <p className="text-xs text-muted-foreground">The quote stays as evidence. Checks re-run after saving, and an earlier callback no longer counts.</p>
+                          <p className="text-xs text-muted-foreground">
+                            The quote stays as evidence. Checks re-run after saving, and an earlier callback no longer counts.
+                          </p>
                         </form>
                       ) : (
                         <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => startEdit(field)}>
@@ -295,7 +348,8 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
               <span className="font-mono text-foreground">{contact.phone}</span>
               {contact.dialled_phone && (
                 <span className="mt-1 block text-xs">
-                  Demo: register numbers are fictional, so automated callbacks ring <span className="font-mono text-copper-ink">{contact.dialled_phone}</span> instead.
+                  Demo: register numbers are fictional, so automated callbacks ring <span className="font-mono text-copper-ink">{contact.dialled_phone}</span>{" "}
+                  instead.
                 </span>
               )}
             </p>

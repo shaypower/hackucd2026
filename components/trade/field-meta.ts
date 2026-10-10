@@ -53,7 +53,7 @@ export function segments(transcript: string, evidence: Evidence[]): Segment[] {
     const last = merged.at(-1);
     if (last && r.start < last.end) {
       last.end = Math.max(last.end, r.end);
-      last.fields.push(...r.fields);
+      last.fields = [...new Set([...last.fields, ...r.fields])];
     } else merged.push({ ...r, fields: [...r.fields] });
   }
   const out: Segment[] = [];
