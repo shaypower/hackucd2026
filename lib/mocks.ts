@@ -56,6 +56,11 @@ export const mockSamples: SampleTranscript[] = [
   { id: "unreadable", label: "Unreadable call", transcript: transcriptUnreadable },
 ];
 
+export const mockCallbackSamples: SampleTranscript[] = [
+  { id: "cb-match", label: "Callback confirms", transcript: callbackTranscriptMatch },
+  { id: "cb-mismatch", label: "Callback says 500 units", transcript: callbackTranscriptMismatch },
+];
+
 // ---------- Register ----------
 
 export const mockContact: Contact = {

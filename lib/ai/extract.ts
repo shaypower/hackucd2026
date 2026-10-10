@@ -19,7 +19,7 @@ Rules:
 - direction: "subscribe" for buy/invest/subscribe, "redeem" for sell/redeem/withdraw/cash out.
 - isin: write spoken or spelled-out forms as 12 characters, e.g. "I-E zero zero B four L five Y nine eight three" -> "IE00B4L5Y983"; NATO alphabet words are letters ("Bravo" -> "B"). Copy what was said even if it looks invalid; validation happens later.
 - quantity: a plain number ("5k" or "five thousand" -> 5000). quantity_type: "units" when the caller says units/shares; "cash" only when a currency is attached to the amount itself ("€5,000", "5,000 euro", "fifty grand in sterling"); otherwise null. A payout or settlement currency mentioned separately ("pay it out in euro") does NOT make the amount cash.
-- currency: ISO 4217 code ("euro" -> "EUR", "dollars" -> "USD", "sterling"/"pounds" -> "GBP").
+- currency: ISO 4217 code for any currency the caller gives for this trade: share class ("US dollar class" -> "USD"), amount ("€5,000" -> "EUR") or payout ("pay it out in euro" -> "EUR"). Set it independently of quantity_type. "euro" -> "EUR", "dollars" -> "USD", "sterling"/"pounds" -> "GBP".
 - account_no: digits/characters only. account_name: the client/account holder. caller_name: the person speaking for the client.
 - evidence: for every non-null field, the shortest quote copied character-for-character from the transcript that supports it.`;
 

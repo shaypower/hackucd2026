@@ -213,6 +213,14 @@ export const CheckResponse = z.object({
 });
 export type CheckResponse = z.infer<typeof CheckResponse>;
 
+// POST /api/callback: read the callback transcript and compare it with the original (stateless)
+export const CallbackCheckRequest = z.object({
+  trade_id: z.string(),
+  original: ExtractedTrade,
+  transcript: z.string().trim().min(1).max(20_000),
+});
+export type CallbackCheckRequest = z.infer<typeof CallbackCheckRequest>;
+
 // GET /api/trades/[id]
 export const TradeDetail = z.object({
   trade: Trade,

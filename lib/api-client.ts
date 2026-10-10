@@ -1,6 +1,7 @@
 // Typed client for the TelDeal API. Pages use this; presentational components never fetch.
 import {
   ApiError,
+  CallbackResult,
   CheckResponse,
   ExtractResponse,
   type ExtractedTrade,
@@ -38,4 +39,8 @@ export function extractCall(transcript: string): Promise<ExtractResponse> {
 
 export function recheckTrade(extracted: ExtractedTrade): Promise<CheckResponse> {
   return post("/api/check", { extracted }, (d) => CheckResponse.parse(d));
+}
+
+export function checkCallback(trade_id: string, original: ExtractedTrade, transcript: string): Promise<CallbackResult> {
+  return post("/api/callback", { trade_id, original, transcript }, (d) => CallbackResult.parse(d));
 }
