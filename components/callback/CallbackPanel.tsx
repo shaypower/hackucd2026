@@ -63,6 +63,11 @@ export function CallbackPanel({
           <p className="text-sm">
             Call the nominated contact <strong>{contact.name}</strong> on <strong>{contact.phone}</strong> (from the register for account {contact.account_no}).
             Never use a number given during the original call.
+            {contact.dialled_phone && (
+              <span className="mt-1 block text-sky-700 dark:text-sky-300">
+                Demo: the register numbers are fictional, so automated callbacks ring <strong>{contact.dialled_phone}</strong> instead.
+              </span>
+            )}
           </p>
         ) : (
           <Alert variant="destructive">

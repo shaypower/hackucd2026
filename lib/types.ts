@@ -87,8 +87,9 @@ export type Check = z.infer<typeof Check>;
 
 export const Contact = z.object({
   name: z.string(),
-  phone: z.string(),
+  phone: z.string(), // as on the register
   account_no: z.string(),
+  dialled_phone: z.string().optional(), // demo only: where automated callbacks actually go (masked)
 });
 export type Contact = z.infer<typeof Contact>;
 

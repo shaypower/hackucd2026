@@ -16,6 +16,10 @@ export async function POST(request: Request, ctx: RouteContext<"/api/trades/[id]
     if (blocker) return apiError("conflict", blocker, 409);
     const contact = trade.nominated_callback!;
 
+    // Safety: the demo register's numbers are made up and may belong to real people. Never dial them.
+    if (!process.env.DEMO_CALLBACK_NUMBER && /\b555\b/.test(contact.phone)) {
+      return apiError("conflict", "The register's numbers are fictional demo numbers. Set DEMO_CALLBACK_NUMBER to place automated callbacks.", 409);
+    }
     const { to, redirected } = callbackDestination(contact.phone);
     const baseUrl = new URL(publicUrl(request)).origin;
     let callSid: string;
