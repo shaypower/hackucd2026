@@ -222,6 +222,48 @@ const callbackPanel: State[] = [
     ),
   },
   {
+    id: "cb-call",
+    label: "Automated call",
+    kind: "empty",
+    note: "onCallNow · dialled_phone (demo)",
+    render: () => (
+      <CallbackPanel
+        trade={mockTradeClean}
+        contact={{ ...mockContact, dialled_phone: "+353 •• ••• 0199" }}
+        callback={null}
+        pending={false}
+        error={null}
+        onSubmitCallback={noop}
+        canApprove={false}
+        approveBlockedReason="Record the callback first."
+        onApprove={noop}
+        samples={mockCallbackSamples}
+        onCallNow={noop}
+      />
+    ),
+  },
+  {
+    id: "cb-calling",
+    label: "Calling",
+    kind: "busy",
+    note: "calling: { status: dialling }",
+    render: () => (
+      <CallbackPanel
+        trade={mockTradeClean}
+        contact={{ ...mockContact, dialled_phone: "+353 •• ••• 0199" }}
+        callback={null}
+        pending={false}
+        error={null}
+        onSubmitCallback={noop}
+        canApprove={false}
+        approveBlockedReason="Record the callback first."
+        onApprove={noop}
+        onCallNow={noop}
+        calling={{ status: "dialling", to: "+353 •• ••• 0199", redirected: true }}
+      />
+    ),
+  },
+  {
     id: "cb-approved",
     label: "Approved",
     kind: "ok",

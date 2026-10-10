@@ -212,7 +212,11 @@ export function CallbackPanel({
           </li>
           <li className="flex gap-2.5">
             <PhoneOutgoing aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <span>Dial from your desk phone; TelDeal doesn&apos;t place calls. Paste what was said below.</span>
+            <span>
+              {onCallNow
+                ? "Let TelDeal's agent call the registered number below, or dial from your desk phone and paste what was said."
+                : "Dial from your desk phone; TelDeal doesn't place calls. Paste what was said below."}
+            </span>
           </li>
           <li className="flex gap-2.5">
             <Users aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
