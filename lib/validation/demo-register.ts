@@ -9,6 +9,8 @@ export const demoRegister: Register = {
     { isin: "IE00B5BMR087", name: "iShares Core S&P 500 UCITS ETF (Acc)", share_class_currencies: ["USD"], cutoff_time: "17:30" },
     { isin: "IE00BK5BQT80", name: "Vanguard FTSE All-World UCITS ETF (Acc)", share_class_currencies: ["USD"], cutoff_time: "17:30" },
     { isin: "IE00B3XXRP09", name: "Vanguard S&P 500 UCITS ETF (Dist)", share_class_currencies: ["USD", "GBP"], cutoff_time: "17:30" },
+    // All digits after "IE": easy to read out on a phone line (used by the Shay Power demo call).
+    { isin: "IE0031442068", name: "iShares Core S&P 500 UCITS ETF (Dist)", share_class_currencies: ["USD"], cutoff_time: "17:30" },
   ],
   accounts: [
     { account_no: "40012", account_name: "Harbourview Pension Trustees" },

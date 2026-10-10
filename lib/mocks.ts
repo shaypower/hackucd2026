@@ -38,14 +38,14 @@ Caller: Just use this number, I'm travelling.`;
 export const transcriptShay = `Agent: Good afternoon, dealing desk, Aoife speaking.
 Caller: Hi Aoife, it's Shay Power, calling about the University of Limerick Investment Group account, account number 40058.
 Agent: Thanks Shay, what can I do for you?
-Caller: I'd like to subscribe for 2,500 units in the Vanguard S&P 500, ISIN IE00B3XXRP09, US dollar share class please.
-Agent: So that's a subscription of 2,500 units in IE00B3XXRP09, US dollars, for account 40058. Correct?
+Caller: I'd like to subscribe for 2,500 units in the iShares Core S&P 500, ISIN IE0031442068, US dollar share class please.
+Agent: So that's a subscription of 2,500 units in IE0031442068, US dollars, for account 40058. Correct?
 Caller: That's correct, thanks.`;
 
 export const callbackTranscriptHersh = `Agent: Hi Hersh, it's the dealing desk calling back to confirm an instruction on account 40058.
 Caller: Go ahead.
 Agent: Can you tell me the instruction you placed today?
-Caller: Yes, Hersh Singh speaking. Subscribe 2,500 units of IE00B3XXRP09, the Vanguard S&P 500, US dollar share class, for University of Limerick Investment Group, account 40058.`;
+Caller: Yes, Hersh Singh speaking. Subscribe 2,500 units of IE0031442068, the iShares Core S&P 500, US dollar share class, for University of Limerick Investment Group, account 40058.`;
 
 export const transcriptUnreadable = `Agent: Dealing desk...
 Caller: [inaudible] ...account... [line breaks up] ...the usual...

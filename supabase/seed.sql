@@ -7,7 +7,8 @@ insert into public.funds (isin, name, share_class_currencies, cutoff_time) value
   ('IE00B4L5Y983', 'iShares Core MSCI World UCITS ETF (Acc)', array['USD', 'EUR'], '17:30'),
   ('IE00B5BMR087', 'iShares Core S&P 500 UCITS ETF (Acc)', array['USD'], '17:30'),
   ('IE00BK5BQT80', 'Vanguard FTSE All-World UCITS ETF (Acc)', array['USD'], '17:30'),
-  ('IE00B3XXRP09', 'Vanguard S&P 500 UCITS ETF (Dist)', array['USD', 'GBP'], '17:30');
+  ('IE00B3XXRP09', 'Vanguard S&P 500 UCITS ETF (Dist)', array['USD', 'GBP'], '17:30'),
+  ('IE0031442068', 'iShares Core S&P 500 UCITS ETF (Dist)', array['USD'], '17:30');
 
 insert into public.accounts (account_no, account_name) values
   ('40012', 'Harbourview Pension Trustees'),
