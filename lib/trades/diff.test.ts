@@ -77,7 +77,7 @@ describe("acceptField", () => {
 
 describe("demo client callback", () => {
   it("Hersh's callback matches Shay's instruction", async () => {
-    const shay = { ...original, isin: "IE00B3XXRP09", fund_name: "Vanguard S&P 500", account_no: "40058", account_name: "University of Limerick Investment Group", caller_name: "Shay Power", quantity: 2500 };
+    const shay = { ...original, isin: "IE0031442068", fund_name: "iShares Core S&P 500", account_no: "40058", account_name: "University of Limerick Investment Group", caller_name: "Shay Power", quantity: 2500 };
     const hersh = { ...shay, caller_name: "Hersh Singh" };
     expect(diffTrades(shay, hersh).all_match).toBe(true);
   });

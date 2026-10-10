@@ -158,7 +158,7 @@ describe("nominatedContact", () => {
 
 describe("demo client: Shay Power instructs, Hersh Singh confirms", () => {
   const shay: ExtractedTrade = {
-    direction: "subscribe", isin: "IE00B3XXRP09", fund_name: "Vanguard S&P 500", account_no: "40058",
+    direction: "subscribe", isin: "IE0031442068", fund_name: "iShares Core S&P 500", account_no: "40058",
     account_name: "University of Limerick Investment Group", caller_name: "Shay Power", currency: "USD",
     quantity: 2500, quantity_type: "units", evidence: [],
   };
