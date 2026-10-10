@@ -15,8 +15,8 @@ export async function POST(request: Request) {
       client_reference_id: DESK_ID,
       subscription_data: { metadata: { desk_id: DESK_ID } },
       metadata: { desk_id: DESK_ID },
-      success_url: `${origin}/billing?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/billing?canceled=1`,
+      success_url: `${origin}/?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/?canceled=1`,
     });
     return Response.json({ url: session.url });
   });

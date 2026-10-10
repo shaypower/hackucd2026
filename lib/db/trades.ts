@@ -86,6 +86,14 @@ export async function insertTrade(
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Demo reset: removes a trade with its callbacks, calls and audit events (FKs cascade). */
+export async function deleteTrade(id: string): Promise<void> {
+  if (!UUID.test(id)) throw new NotFoundError(`Trade ${id} not found.`);
+  const { data, error } = await db().from("trades").delete().eq("id", id).select("id");
+  if (error) fail("delete trade", error);
+  if (!data || data.length === 0) throw new NotFoundError(`Trade ${id} not found.`);
+}
+
 export async function getTrade(id: string, register: Register): Promise<Trade> {
   if (!UUID.test(id)) throw new NotFoundError(`Trade ${id} not found.`);
   const { data, error } = await db().from("trades").select("*").eq("id", id).maybeSingle();

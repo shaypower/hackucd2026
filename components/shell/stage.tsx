@@ -70,19 +70,25 @@ export function Stage({ kicker, title, sub, facts, children }: StageProps) {
   return (
     <section className="relative isolate flex min-h-64 flex-col overflow-hidden bg-night px-4 pt-6 pb-0 text-[#f5f3ee] sm:px-10 md:min-h-72">
       <StageArt />
-      <div className="max-w-2xl pb-8">
-        {kicker && <p style={delay(0)} className={`${RISE} font-mono text-[11px] font-medium tracking-[0.12em] text-[#f5f3ee]/65 uppercase`}>{kicker}</p>}
-        <h1 style={delay(80)} className={`${RISE} mt-3 mb-2.5 font-serif text-4xl leading-[1.02] font-normal tracking-[-0.018em] sm:text-[44px]`}>{title}</h1>
-        {sub && <p style={delay(160)} className={`${RISE} text-[15.5px] text-[#f5f3ee]/80`}>{sub}</p>}
-        {facts && facts.length > 0 && (
-          <p style={delay(220)} className={`${RISE} mt-3.5 flex flex-wrap gap-x-4.5 gap-y-1 font-mono text-xs text-[#f5f3ee]/70`}>
-            {facts.map((f) => (
-              <span key={f}>{f}</span>
-            ))}
-          </p>
-        )}
+      <div className="mx-auto w-full max-w-6xl">
+        <div className="max-w-2xl pb-8">
+          {kicker && <p style={delay(0)} className={`${RISE} font-mono text-[11px] font-medium tracking-[0.12em] text-[#f5f3ee]/65 uppercase`}>{kicker}</p>}
+          <h1 style={delay(80)} className={`${RISE} mt-3 mb-2.5 font-serif text-4xl leading-[1.02] font-normal tracking-[-0.018em] sm:text-[44px]`}>{title}</h1>
+          {sub && <p style={delay(160)} className={`${RISE} text-[15.5px] text-[#f5f3ee]/80`}>{sub}</p>}
+          {facts && facts.length > 0 && (
+            <p style={delay(220)} className={`${RISE} mt-3.5 flex flex-wrap gap-x-4.5 gap-y-1 font-mono text-xs text-[#f5f3ee]/70`}>
+              {facts.map((f) => (
+                <span key={f}>{f}</span>
+              ))}
+            </p>
+          )}
+        </div>
       </div>
-      {children && <div className="-mx-4 mt-auto bg-linear-to-t from-night from-55% to-night/0 px-4 pt-6 sm:-mx-10 sm:px-10">{children}</div>}
+      {children && (
+        <div className="-mx-4 mt-auto bg-linear-to-t from-night from-55% to-night/0 px-4 pt-6 sm:-mx-10 sm:px-10">
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        </div>
+      )}
     </section>
   );
 }

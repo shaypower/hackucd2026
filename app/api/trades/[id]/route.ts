@@ -1,8 +1,9 @@
 // GET /api/trades/[id] -> TradeDetail
 // PATCH /api/trades/[id] { field, value } -> TradeDetail (agent correction; checks re-run, callback needed again)
+// DELETE /api/trades/[id] -> 204 (demo reset: removes the trade and its audit trail)
 import { apiError, handleErrors, readJson } from "@/lib/api/respond";
 import { getRegister } from "@/lib/db/get-register";
-import { addAudit, getTrade, getTradeDetail, updateTrade } from "@/lib/db/trades";
+import { addAudit, deleteTrade, getTrade, getTradeDetail, updateTrade } from "@/lib/db/trades";
 import { applyEdit } from "@/lib/trades/edit";
 import { EditFieldRequest } from "@/lib/types";
 import { runChecks, statusFromChecks } from "@/lib/validation/checks";
@@ -31,5 +32,13 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/trades/[id
     await updateTrade(id, { extracted, checks, status: statusFromChecks(checks) });
     await addAudit(id, "field_edited", { field, from: trade.extracted[field], to: extracted[field] });
     return Response.json(await getTradeDetail(id, register));
+  });
+}
+
+export async function DELETE(_request: Request, ctx: RouteContext<"/api/trades/[id]">) {
+  const { id } = await ctx.params;
+  return handleErrors(async () => {
+    await deleteTrade(id);
+    return new Response(null, { status: 204 });
   });
 }

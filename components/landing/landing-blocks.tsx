@@ -1,22 +1,10 @@
-// Landing page blocks: demo scenarios, how it works, and live desk counts. Presentational only.
-import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { StatusMark } from "@/components/shell/status-mark";
+// Landing page blocks: section heads, how it works, and live desk counts. Presentational only.
 import type { DeskStats } from "@/lib/db/trades";
-import type { CheckStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 // Entrance: blocks rise in, staggered. Reduced motion collapses it (globals.css).
 const RISE = "animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out fill-mode-both";
 const delay = (ms: number) => ({ animationDelay: `${ms}ms` });
-
-export interface Scenario {
-  href: string;
-  title: string;
-  body: string;
-  tag: string;
-  status: CheckStatus;
-}
 
 /** Section heading in the B1 style: serif title over a hairline, mono aside. */
 export function SectionHead({ title, aside }: { title: string; aside?: string }) {
@@ -25,32 +13,6 @@ export function SectionHead({ title, aside }: { title: string; aside?: string })
       <h2 className="font-serif text-2xl tracking-[-0.01em]">{title}</h2>
       {aside && <span className="font-mono text-[11.5px] text-muted-foreground">{aside}</span>}
     </div>
-  );
-}
-
-export function ScenarioBlocks({ scenarios }: { scenarios: Scenario[] }) {
-  return (
-    <ul className="grid gap-3 md:grid-cols-3">
-      {scenarios.map((s, i) => (
-        <li key={s.href} style={delay(120 + i * 70)} className={RISE}>
-          <Link
-            href={s.href}
-            className="group flex h-full flex-col gap-3 rounded-xl border border-border bg-paper p-5 transition-[translate,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-line-strong hover:shadow-[0_10px_24px_-16px_rgb(16_38_34/0.45)] sm:p-6"
-          >
-            <span className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-mono text-[11px] tracking-[0.12em] whitespace-nowrap text-muted-foreground uppercase">Scenario {String(i + 1).padStart(2, "0")}</span>
-              <StatusMark status={s.status} label={s.tag} className={s.status === "pass" ? "bg-pass-wash px-2" : undefined} />
-            </span>
-            <span className="font-serif text-[22px] leading-tight tracking-[-0.01em]">{s.title}</span>
-            <span className="text-[13.5px] leading-relaxed text-muted-foreground">{s.body}</span>
-            <span className="mt-auto inline-flex items-center gap-1 pt-1 text-[13px] font-semibold text-copper-ink">
-              Run it on the desk
-              <ArrowUpRight aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ul>
   );
 }
 

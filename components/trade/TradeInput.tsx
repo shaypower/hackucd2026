@@ -209,36 +209,40 @@ export function TradeInput({
             </section>
           )}
 
-          <section aria-labelledby="ti-samples-h" className="flex flex-col gap-2">
-            <h3 id="ti-samples-h" className="font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
-              {onAudio ? "Or a sample transcript" : "Sample transcripts"}
-            </h3>
-            <ul className="flex flex-col">
-              {samples.map((s, i) => {
-                const active = transcript === s.transcript;
-                return (
-                  <li key={s.id} className="animate-in fade-in fill-mode-both" style={{ animationDelay: `${150 + i * 50}ms` }}>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      aria-pressed={active}
-                      onClick={() => setTranscript(s.transcript)}
-                      className={cn(
-                        "group flex w-full flex-col gap-0.5 border-b border-border px-2 py-2.5 text-left transition-colors duration-200 hover:bg-background disabled:pointer-events-none disabled:opacity-50",
-                        active && "bg-background",
-                      )}
-                    >
-                      <span className="flex items-center gap-2 text-[14px] font-medium">
-                        <span aria-hidden="true" className={cn("size-1.5 rounded-full bg-input transition-colors duration-200", active && "bg-copper")} />
-                        {s.label}
-                      </span>
-                      <span className="truncate pl-3.5 font-serif text-[14px] text-muted-foreground italic">“{firstCallerLine(s.transcript)}”</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+          {samples.length > 0 ? (
+            <section aria-labelledby="ti-samples-h" className="flex flex-col gap-2">
+              <h3 id="ti-samples-h" className="font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                {onAudio ? "Or a sample transcript" : "Sample transcripts"}
+              </h3>
+              <ul className="flex flex-col">
+                {samples.map((s, i) => {
+                  const active = transcript === s.transcript;
+                  return (
+                    <li key={s.id} className="animate-in fade-in fill-mode-both" style={{ animationDelay: `${150 + i * 50}ms` }}>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        aria-pressed={active}
+                        onClick={() => setTranscript(s.transcript)}
+                        className={cn(
+                          "group flex w-full flex-col gap-0.5 border-b border-border px-2 py-2.5 text-left transition-colors duration-200 hover:bg-background disabled:pointer-events-none disabled:opacity-50",
+                          active && "bg-background",
+                        )}
+                      >
+                        <span className="flex items-center gap-2 text-[14px] font-medium">
+                          <span aria-hidden="true" className={cn("size-1.5 rounded-full bg-input transition-colors duration-200", active && "bg-copper")} />
+                          {s.label}
+                        </span>
+                        <span className="truncate pl-3.5 font-serif text-[14px] text-muted-foreground italic">“{firstCallerLine(s.transcript)}”</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : (
+            <p className="text-[13px] text-muted-foreground">Or paste the call transcript.</p>
+          )}
         </div>
 
         {/* Transcript */}
@@ -292,7 +296,7 @@ export function TradeInput({
           {pending
             ? "The AI proposes values with quotes; it never approves anything."
             : empty
-              ? "Pick a sample, record, upload, or paste a call to begin."
+              ? "Record, upload, or paste a call to begin."
               : "Ready. Extraction quotes the call for every value it finds."}
         </p>
         <Button type="submit" size="lg" className="h-10 px-5" disabled={empty || busy}>

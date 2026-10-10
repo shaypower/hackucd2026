@@ -1,9 +1,11 @@
 "use client";
 // Phone line panel (Dev A container): shows the TelDeal number and polls for instructions that came in by phone.
 import { useEffect, useRef, useState } from "react";
+import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TradeSummary } from "@/lib/db/trades";
-import { STATUS_LABEL, STATUS_STYLE } from "@/lib/trades/status";
+import { statusChip } from "@/lib/trades/status";
+import { cn } from "@/lib/utils";
 
 const PHONE = process.env.NEXT_PUBLIC_TELDEAL_PHONE;
 const POLL_MS = 4000;
@@ -46,38 +48,59 @@ export function PhoneLine({ onOpen }: { onOpen: (tradeId: string) => void }) {
     }
   }, [calls, seen, onOpen]);
 
-  const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IE", { timeZone: "Europe/Dublin", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   return (
-    <section aria-label="Phone line" className="flex flex-col gap-2 rounded-md border p-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-medium">📞 Phone line</h2>
-        {PHONE ? (
-          <p className="text-sm">
-            Call <strong className="font-mono">{PHONE}</strong>, give your name, account and instruction; it appears here about 20 s after you hang up.
+    <section aria-label="Phone line" className="overflow-hidden rounded-xl border border-border bg-paper">
+      <div className="grid items-center gap-4 px-5 py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-7">
+        <div className="flex flex-col gap-1.5">
+          <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+            <span aria-hidden="true" className="relative flex size-2">
+              {PHONE && !failed && <span className="absolute inline-flex size-full animate-ping rounded-full bg-pass opacity-50" />}
+              <span className={cn("relative inline-flex size-2 rounded-full", PHONE && !failed ? "bg-pass" : "bg-line-strong")} />
+            </span>
+            Phone line {PHONE && !failed ? "· live" : ""}
           </p>
-        ) : (
-          <p className="text-sm text-muted-foreground">Phone line not configured (set NEXT_PUBLIC_TELDEAL_PHONE).</p>
+          <h2 className="font-serif text-2xl leading-tight tracking-[-0.01em]">Call the desk</h2>
+          <p className="max-w-md text-[13.5px] text-muted-foreground">
+            {PHONE
+              ? "Give your name, account and instruction. The trade appears here about 20 seconds after you hang up."
+              : "Phone line not configured: set NEXT_PUBLIC_TELDEAL_PHONE."}
+          </p>
+        </div>
+        {PHONE && (
+          <a
+            href={`tel:${PHONE.replace(/\s/g, "")}`}
+            className="flex items-center justify-center gap-3 rounded-xl bg-night px-5 py-4 text-[#f5f3ee] transition-colors duration-200 hover:bg-forest sm:justify-self-end"
+          >
+            <Phone aria-hidden="true" className="size-5 text-copper-lit" />
+            <span className="font-mono text-xl tracking-[0.04em] tabular-nums sm:text-2xl">{PHONE}</span>
+          </a>
         )}
       </div>
-      {failed && <p className="text-sm text-red-700 dark:text-red-300">Can&apos;t check for new calls right now; retrying…</p>}
-      {calls && calls.length === 0 && <p className="text-sm text-muted-foreground">No phone instructions yet.</p>}
+
+      {failed && <p className="border-t border-border bg-fail-wash px-5 py-2.5 text-[13px] text-fail sm:px-7">Can&apos;t check for new calls right now; retrying…</p>}
+      {calls && calls.length === 0 && <p className="border-t border-border px-5 py-3 text-[13px] text-muted-foreground sm:px-7">No phone instructions yet.</p>}
       {calls && calls.length > 0 && (
-        <ul className="flex flex-col divide-y text-sm">
+        <ul className="border-t border-border">
           {calls.map((c) => {
             const isNew = seen !== null && !seen.has(c.id);
+            const chip = statusChip(c);
             return (
-              <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1.5">
-                <span className="font-mono text-muted-foreground">{time(c.created_at)}</span>
-                {isNew && <span className="rounded bg-sky-600 px-1.5 py-0.5 text-xs font-medium text-white">New</span>}
-                <span className="font-mono">{c.caller_id ?? "unknown caller"}</span>
-                <span>
-                  {c.direction ?? "?"} {c.isin ?? "—"} · acct {c.account_no ?? "—"}
+              <li
+                key={c.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-border px-5 py-2.5 text-[13.5px] last:border-b-0 sm:grid-cols-[5.5rem_minmax(0,11rem)_minmax(0,1fr)_auto_auto] sm:px-7"
+              >
+                <span className="font-mono text-[12px] text-muted-foreground tabular-nums">{time(c.created_at)}</span>
+                <span className="hidden truncate font-mono text-[12.5px] sm:block">{c.caller_id ?? "Unknown caller"}</span>
+                <span className="col-span-2 min-w-0 truncate sm:col-span-1">
+                  {isNew && <span className="mr-2 rounded bg-copper px-1.5 py-0.5 text-[11px] font-semibold text-white">New</span>}
+                  {c.direction ? c.direction[0].toUpperCase() + c.direction.slice(1) : "Trade"} <span className="font-mono">{c.isin ?? "—"}</span>
+                  <span className="text-muted-foreground"> · acct </span>
+                  <span className="font-mono">{c.account_no ?? "—"}</span>
                 </span>
-                <span className={`rounded px-2 py-0.5 text-xs font-medium ${c.blocked && c.status === "needs_review" ? "bg-red-100 text-red-900" : STATUS_STYLE[c.status]}`}>
-                  {c.blocked && c.status === "needs_review" ? "Blocked" : STATUS_LABEL[c.status]}
-                </span>
-                <Button size="sm" variant="outline" className="ml-auto h-7" onClick={() => onOpen(c.id)}>
+                <span className={cn("w-fit rounded-md px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap", chip.style)}>{chip.label}</span>
+                <Button size="sm" variant="outline" className="h-7 justify-self-end" onClick={() => onOpen(c.id)}>
                   Open
                 </Button>
               </li>

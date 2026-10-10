@@ -9,11 +9,17 @@ export const STATUS_LABEL: Record<TradeStatus, string> = {
   rejected: "Rejected",
 };
 
+// Theme tokens (app/globals.css); the label always ships with the colour.
 export const STATUS_STYLE: Record<TradeStatus, string> = {
-  needs_review: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
-  awaiting_callback: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200",
-  callback_mismatch: "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200",
-  ready_to_approve: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
-  approved: "bg-emerald-600 text-white",
-  rejected: "bg-zinc-200 text-zinc-800",
+  needs_review: "bg-warn-wash text-warn",
+  awaiting_callback: "bg-accent text-copper-ink",
+  callback_mismatch: "bg-fail-wash text-fail",
+  ready_to_approve: "bg-pass-wash text-pass",
+  approved: "bg-pass text-primary-foreground",
+  rejected: "bg-muted text-muted-foreground",
 };
+
+/** Blocked = still in review with a failed check; shown instead of "Needs review". */
+export function statusChip(t: { status: TradeStatus; blocked: boolean }): { label: string; style: string } {
+  return t.blocked && t.status === "needs_review" ? { label: "Blocked", style: "bg-fail-wash text-fail" } : { label: STATUS_LABEL[t.status], style: STATUS_STYLE[t.status] };
+}
