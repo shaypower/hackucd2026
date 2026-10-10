@@ -23,7 +23,13 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.120.0
-      - name: Push migrations and seed
+      - name: Push migrations
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: supabase db push --db-url "$SUPABASE_DB_URL" --include-seed --yes
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --yes
+      # `db push --include-seed` only records a changed seed's hash once it has run before, so register
+      # changes never land. The seed is idempotent (truncate + insert), so apply it directly every time.
+      - name: Apply seed (demo register)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
