@@ -24,7 +24,7 @@ describe("makeCallbackSamples", () => {
 describe("maskPhone", () => {
   it("shows only the prefix and last four digits", async () => {
     const { maskPhone } = await import("@/lib/trades/build");
-    expect(maskPhone("+353872256643")).toBe("+353 87 ••• 6643");
-    expect(maskPhone("+353 87 225 6643")).toBe("+353 87 ••• 6643");
+    expect(maskPhone("+353870000123")).toBe("+353 87 ••• 0123");
+    expect(maskPhone("+353 87 000 0123")).toBe("+353 87 ••• 0123");
   });
 });

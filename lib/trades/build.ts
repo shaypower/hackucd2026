@@ -3,7 +3,7 @@ import type { Contact, ExtractedTrade, Trade } from "@/lib/types";
 import { runChecks, statusFromChecks } from "@/lib/validation/checks";
 import { findAccount, nominatedContact, type Register } from "@/lib/validation/register";
 
-/** "+353872256643" -> "+353 87 ••• 6643" (the site is public, so never show the full demo number). */
+/** "+353870000123" -> "+353 87 ••• 0123" (the site is public, so never show the full demo number). */
 export function maskPhone(n: string): string {
   const digits = n.replace(/[^\d+]/g, "");
   return digits.length > 8 ? `${digits.slice(0, 4)} ${digits.slice(4, 6)} ••• ${digits.slice(-4)}` : "••••";
