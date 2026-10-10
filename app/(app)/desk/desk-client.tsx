@@ -1,31 +1,26 @@
 "use client";
-// Container for /desk (Dev A): owns state and API calls; components only render props.
-import { useState } from "react";
-import { AuditTrail } from "@/components/audit/AuditTrail";
-import { CallbackPanel } from "@/components/callback/CallbackPanel";
+// Container for /desk (Dev A): owns input state and API calls; components only render props.
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { TradeInput } from "@/components/trade/TradeInput";
-import { TradeReview } from "@/components/trade/TradeReview";
 import type { AudioSample, SampleTranscript } from "@/components/trade/types";
-import {
-  ApiClientError,
-  approveTrade,
-  editTradeField,
-  exportUrl,
-  extractCall,
-  getTradeDetail,
-  recordCallback,
-  transcribeAudio,
-} from "@/lib/api-client";
+import { ApiClientError, extractCall, transcribeAudio } from "@/lib/api-client";
 import { toWav16kMono } from "@/lib/audio/wav";
-import { mockCallbackSamples } from "@/lib/mocks";
-import { approvalBlocker } from "@/lib/trades/approval";
-import type { ExtractResponse, TradeDetail, TradeField, UiError } from "@/lib/types";
-import { canProceed } from "@/lib/validation/checks";
+import type { ExtractResponse, Trade, UiError } from "@/lib/types";
+import { TradeWorkspace } from "../trade-workspace";
 
 function toUiError(error: unknown): UiError {
   if (error instanceof ApiClientError) return error.error;
   return { code: "internal", message: "Something went wrong. Try again." };
 }
+
+// One-click demo scenarios, linked from the home page as /desk#<id>.
+export const SCENARIOS = {
+  audio: { title: "A real phone call", guide: "The recording is transcribed, the trade read and checked. Next: Proceed to callback → “Callback confirms” → Approve → Download." },
+  fraud: { title: "A fraudulent instruction", guide: "An unknown caller and a mistyped ISIN are blocked before anyone calls back. Try “Use IE00B4L5Y983”: the caller check still blocks it." },
+  mismatch: { title: "A fat-finger callback", guide: "The callback reads back the wrong quantity. Pick “Callback says 500 units” → Compare: Approve stays locked." },
+} as const;
+type ScenarioId = keyof typeof SCENARIOS;
 
 export function DeskClient({ samples, audioSamples }: { samples: SampleTranscript[]; audioSamples: AudioSample[] }) {
   const [transcript, setTranscript] = useState("");
@@ -34,42 +29,19 @@ export function DeskClient({ samples, audioSamples }: { samples: SampleTranscrip
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<UiError | null>(null);
   const [meta, setMeta] = useState<Omit<ExtractResponse, "trades"> | null>(null);
-
-  // Saved trades in the order they were read, with their server state (trade, latest callback, audit).
-  const [order, setOrder] = useState<string[]>([]);
-  const [details, setDetails] = useState<Record<string, TradeDetail>>({});
-  const [busy, setBusy] = useState<Record<string, "edit" | "callback" | "approve" | undefined>>({});
-  const [errors, setErrors] = useState<Record<string, UiError | null>>({});
-  const [callbackOpen, setCallbackOpen] = useState<Record<string, boolean>>({});
-
-  async function run(id: string, kind: "edit" | "callback" | "approve", action: () => Promise<TradeDetail>) {
-    setBusy((b) => ({ ...b, [id]: kind }));
-    setErrors((e) => ({ ...e, [id]: null }));
-    try {
-      const detail = await action();
-      setDetails((d) => ({ ...d, [id]: detail }));
-    } catch (error) {
-      setErrors((e) => ({ ...e, [id]: toUiError(error) }));
-    } finally {
-      setBusy((b) => ({ ...b, [id]: undefined }));
-    }
-  }
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [scenario, setScenario] = useState<ScenarioId | null>(null);
+  const started = useRef(false);
 
   async function handleExtract(text: string) {
     setExtracting(true);
     setExtractError(null);
-    setOrder([]);
-    setDetails({});
-    setErrors({});
-    setCallbackOpen({});
+    setTrades([]);
     setMeta(null);
     try {
       const { trades, ...rest } = await extractCall(text);
       setMeta(rest);
-      setOrder(trades.map((t) => t.id));
-      setDetails(Object.fromEntries(trades.map((t) => [t.id, { trade: t, callback: null, audit: [] }])));
-      // Load the saved audit trail (the "instruction captured" event).
-      await Promise.all(trades.map((t) => getTradeDetail(t.id).then((d) => setDetails((all) => ({ ...all, [t.id]: d }))).catch(() => {})));
+      setTrades(trades);
     } catch (error) {
       setExtractError(toUiError(error));
     } finally {
@@ -97,8 +69,35 @@ export function DeskClient({ samples, audioSamples }: { samples: SampleTranscrip
     }
   }
 
+  // Run a scenario from the URL hash once, on first load.
+  useEffect(() => {
+    const id = window.location.hash.slice(1) as ScenarioId;
+    if (started.current || !(id in SCENARIOS)) return;
+    started.current = true;
+    const sample = (sid: string) => samples.find((s) => s.id === sid)?.transcript ?? "";
+    // Start after this render (the hash is only known in the browser).
+    void Promise.resolve().then(async () => {
+      setScenario(id);
+      if (id === "audio" && audioSamples[0]) {
+        const blob = await (await fetch(audioSamples[0].url)).blob();
+        await handleAudio(blob, audioSamples[0].label);
+      } else {
+        const text = sample(id === "fraud" ? "fraud" : "clean");
+        setTranscript(text);
+        await handleExtract(text);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
+
   return (
     <div className="flex flex-col gap-6">
+      {scenario && (
+        <div className="rounded-md border border-sky-300 bg-sky-50 p-3 text-sm dark:border-sky-800 dark:bg-sky-950/40">
+          <strong>Demo: {SCENARIOS[scenario].title}.</strong> {SCENARIOS[scenario].guide}
+        </div>
+      )}
+
       <TradeInput
         samples={samples}
         pending={extracting}
@@ -116,50 +115,16 @@ export function DeskClient({ samples, audioSamples }: { samples: SampleTranscrip
       {meta && (
         <p className="text-xs text-muted-foreground">
           Read by <code>{meta.model}</code> · checked against the {meta.register_source === "database" ? "fund register database" : "built-in demo register"} ·{" "}
-          {order.length} trade{order.length === 1 ? "" : "s"} found and saved
+          {trades.length} trade{trades.length === 1 ? "" : "s"} found and saved ·{" "}
+          <Link href="/trades" className="underline">
+            all trades
+          </Link>
         </p>
       )}
 
-      {order.map((id) => {
-        const detail = details[id];
-        if (!detail) return null;
-        const { trade, callback, audit } = detail;
-        const approved = trade.status === "approved";
-        const blocker = approvalBlocker(trade, callback);
-        return (
-          <div key={id} className="flex flex-col gap-4">
-            <TradeReview
-              trade={trade}
-              pending={busy[id] === "edit"}
-              error={busy[id] === undefined && !callbackOpen[id] ? (errors[id] ?? null) : null}
-              onEditField={(field: TradeField, value: string) => run(id, "edit", () => editTradeField(id, field, value))}
-              canProceed={canProceed(trade.checks) && !approved}
-              onProceedToCallback={() => setCallbackOpen((o) => ({ ...o, [id]: true }))}
-            />
-            {(callbackOpen[id] || callback || approved) && (
-              <CallbackPanel
-                trade={trade}
-                contact={trade.nominated_callback}
-                callback={callback}
-                pending={busy[id] === "callback" || busy[id] === "approve"}
-                error={callbackOpen[id] ? (errors[id] ?? null) : null}
-                onSubmitCallback={(t) => run(id, "callback", () => recordCallback(id, t))}
-                canApprove={blocker === null}
-                approveBlockedReason={blocker}
-                onApprove={() => run(id, "approve", () => approveTrade(id))}
-                samples={mockCallbackSamples}
-                approved={approved}
-                exportUrl={approved ? exportUrl(id) : undefined}
-                onExport={() =>
-                  // The export is logged server-side; refresh the trail once the file has been generated.
-                  setTimeout(() => getTradeDetail(id).then((d) => setDetails((all) => ({ ...all, [id]: d }))).catch(() => {}), 1500)
-                }
-              />
-            )}
-            <AuditTrail events={audit} />
-          </div>
-        );
-      })}
+      {trades.map((trade) => (
+        <TradeWorkspace key={trade.id} initial={{ trade, callback: null, audit: [] }} openCallback={scenario === "mismatch"} />
+      ))}
     </div>
   );
 }
