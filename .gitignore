@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-/lib/
+# /lib/ removed: Next.js keeps source code in lib/
 /lib64/
 parts/
 sdist/
