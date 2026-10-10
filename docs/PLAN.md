@@ -210,6 +210,25 @@ Each card names its files, its contract and when it's done, so it can go straigh
 - **Pitch:** write it up from the eval results (accuracy, model comparison, what changed); prepare
   and rehearse the demo script; act as the "investor" when testing the Stripe flow.
 
+## Git workflow: everything goes through PRs
+Nobody commits straight to `main`; every change, including docs, arrives through a pull request.
+Only the initial scaffold commit (`c422814`) went in directly.
+
+1. One GitHub Issue per task card. Create it with the **GitHub plugin** (GitHub MCP in Claude Code),
+   or with `gh issue create` if the plugin isn't connected.
+2. `git pull --rebase origin main`, then branch `<you>/<issue#>-<task>` (one worktree per agent).
+3. Before pushing: `npm run lint && npm run typecheck && npm test && npm run build`, and check no
+   keys are staged (`.env.local` is git-ignored; never paste keys into code, Issues or PRs).
+4. Open the PR with the GitHub plugin (or `gh pr create`) and add `Closes #<issue>` to its
+   description. Keep PRs small and merge within about an hour.
+5. **Person C reviews** (`/code-review` or by hand) and clicks through the change locally. Merge
+   once approved, preferably as a squash merge.
+
+**GitHub plugin setup (each person, once):** the plugin reads `GITHUB_PERSONAL_ACCESS_TOKEN` from
+the shell. Add `export GITHUB_PERSONAL_ACCESS_TOKEN="$(gh auth token)"` to `~/.zshrc` (or your
+shell's equivalent), then restart Claude Code. If the variable is unset, the plugin fails with
+"Authorization header is badly formatted".
+
 ## Timeline (assumes about 6 hours; scale if different)
 
 **Phase 0: contracts first (≈30 min)**
