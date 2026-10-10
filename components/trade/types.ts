@@ -38,4 +38,6 @@ export interface TradeReviewProps {
   onEditField: (field: TradeField, value: string) => void;
   canProceed: boolean; // true when no check is "fail"
   onProceedToCallback: () => void;
+  recordingUrl?: string; // original call audio, if it came in by phone
+  sourceLabel?: string; // e.g. "Phone call from +1 555 0100"
 }

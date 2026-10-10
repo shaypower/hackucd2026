@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { AutoRefresh } from "./auto-refresh";
 import { DeskStatsCards } from "./stats";
 import { listRecentTrades } from "@/lib/db/trades";
 import { STATUS_LABEL, STATUS_STYLE } from "@/lib/trades/status";
@@ -26,6 +27,7 @@ async function TradeTable() {
         <thead>
           <tr className="border-b text-left text-muted-foreground">
             <th className="py-2 pr-3 font-medium">Received</th>
+            <th className="py-2 pr-3 font-medium">Source</th>
             <th className="py-2 pr-3 font-medium">Instruction</th>
             <th className="py-2 pr-3 font-medium">Account</th>
             <th className="py-2 pr-3 text-right font-medium">Quantity</th>
@@ -36,6 +38,7 @@ async function TradeTable() {
           {trades.map((t) => (
             <tr key={t.id} className="border-b hover:bg-muted/50">
               <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">{fmtTime(t.created_at)}</td>
+              <td className="py-2 pr-3 whitespace-nowrap">{t.channel === "phone" ? `📞 ${t.caller_id ?? "phone"}` : "Desk"}</td>
               <td className="py-2 pr-3">
                 <Link href={`/trades/${t.id}`} className="font-medium hover:underline">
                   {t.direction ? t.direction[0].toUpperCase() + t.direction.slice(1) : "Trade"} <span className="font-mono">{t.isin ?? "—"}</span>
@@ -63,8 +66,9 @@ export default function TradesPage() {
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Trades</h1>
-        <p className="text-muted-foreground">Every instruction captured on the desk, with what the checks and callbacks caught.</p>
+        <p className="text-muted-foreground">Every instruction captured on the desk or the phone line, with what the checks and callbacks caught. Updates live.</p>
       </header>
+      <AutoRefresh />
       <Suspense fallback={<div className="h-20 animate-pulse rounded-md bg-muted" />}>
         <DeskStatsCards />
       </Suspense>

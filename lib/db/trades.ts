@@ -30,6 +30,9 @@ interface TradeRow {
   extracted: unknown;
   checks: unknown;
   created_at: string;
+  channel?: "desk" | "phone";
+  caller_id?: string | null;
+  recording_sid?: string | null;
 }
 
 function toTrade(row: TradeRow, register: Register): Trade {
@@ -42,6 +45,9 @@ function toTrade(row: TradeRow, register: Register): Trade {
     checks: row.checks as Check[],
     nominated_callback: callbackContact(extracted, register),
     created_at: row.created_at,
+    channel: row.channel ?? "desk",
+    caller_id: row.caller_id ?? null,
+    has_recording: Boolean(row.recording_sid),
   };
 }
 
@@ -50,7 +56,11 @@ export async function addAudit(tradeId: string, type: AuditEventType, payload: R
   if (error) fail("write audit event", error);
 }
 
-export async function insertTrade(trade: Trade, meta: Record<string, unknown>): Promise<void> {
+export async function insertTrade(
+  trade: Trade,
+  meta: Record<string, unknown>,
+  phone?: { caller_id: string | null; recording_sid: string },
+): Promise<void> {
   const { error } = await db().from("trades").insert({
     id: trade.id,
     status: trade.status,
@@ -58,11 +68,19 @@ export async function insertTrade(trade: Trade, meta: Record<string, unknown>): 
     extracted: trade.extracted,
     checks: trade.checks,
     created_at: trade.created_at,
+    ...(phone ? { channel: "phone", caller_id: phone.caller_id, recording_sid: phone.recording_sid } : {}),
   });
   if (error) fail("save trade", error);
   const failed = trade.checks.filter((c) => c.status === "fail").length;
   const warned = trade.checks.filter((c) => c.status === "warn").length;
-  await addAudit(trade.id, "trade_created", { ...meta, status: trade.status, checks_failed: failed, checks_warned: warned });
+  await addAudit(trade.id, "trade_created", {
+    ...meta,
+    channel: phone ? "phone" : "desk",
+    ...(phone ? { caller_id: phone.caller_id } : {}),
+    status: trade.status,
+    checks_failed: failed,
+    checks_warned: warned,
+  });
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -118,19 +136,22 @@ export interface TradeSummary {
   account_no: string | null;
   quantity: number | null;
   blocked: boolean; // at least one failed check
+  channel: "desk" | "phone";
+  caller_id: string | null;
 }
 
-export async function listRecentTrades(limit = 20): Promise<TradeSummary[]> {
-  const { data, error } = await db()
-    .from("trades")
-    .select("id, status, created_at, extracted, checks")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+export async function listRecentTrades(limit = 20, channel?: "desk" | "phone"): Promise<TradeSummary[]> {
+  let query = db().from("trades").select("id, status, created_at, extracted, checks, channel, caller_id");
+  if (channel) query = query.eq("channel", channel);
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(limit);
   if (error) fail("list trades", error);
   return (data ?? []).map((r) => {
     const e = r.extracted as ExtractedTrade;
     const blocked = (r.checks as Check[]).some((c) => c.status === "fail");
-    return { id: r.id, status: r.status, created_at: r.created_at, direction: e.direction, isin: e.isin, account_no: e.account_no, quantity: e.quantity, blocked };
+    return {
+      id: r.id, status: r.status, created_at: r.created_at, direction: e.direction, isin: e.isin,
+      account_no: e.account_no, quantity: e.quantity, blocked, channel: r.channel ?? "desk", caller_id: r.caller_id ?? null,
+    };
   });
 }
 
@@ -155,4 +176,12 @@ export async function getDeskStats(): Promise<DeskStats> {
     approved: tradesWith((r) => r.type === "approved"),
     exported: tradesWith((r) => r.type === "exported"),
   };
+}
+
+export async function getRecordingSid(tradeId: string): Promise<string | null> {
+  if (!UUID.test(tradeId)) throw new NotFoundError(`Trade ${tradeId} not found.`);
+  const { data, error } = await db().from("trades").select("recording_sid").eq("id", tradeId).maybeSingle();
+  if (error) fail("load recording", error);
+  if (!data) throw new NotFoundError(`Trade ${tradeId} not found.`);
+  return data.recording_sid;
 }

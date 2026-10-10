@@ -54,6 +54,8 @@ export function TradeWorkspace({ initial, openCallback = false }: { initial: Tra
         onEditField={(field: TradeField, value: string) => run("edit", () => editTradeField(id, field, value))}
         canProceed={canProceed(trade.checks) && !approved}
         onProceedToCallback={() => setCallbackOpen(true)}
+        recordingUrl={trade.has_recording ? `/api/trades/${id}/recording` : undefined}
+        sourceLabel={trade.channel === "phone" ? `Phone call to the TelDeal line${trade.caller_id ? ` from ${trade.caller_id}` : ""}` : undefined}
       />
       {showCallback && (
         <CallbackPanel

@@ -114,6 +114,9 @@ export const Trade = z.object({
   checks: z.array(Check),
   nominated_callback: Contact.nullable(), // from the register, never from the call
   created_at: Timestamp,
+  channel: z.enum(["desk", "phone"]).optional(), // phone = call to the TelDeal line
+  caller_id: z.string().nullable().optional(), // number the call came from (informational; can be spoofed)
+  has_recording: z.boolean().optional(), // original call audio available at /api/trades/[id]/recording
 });
 export type Trade = z.infer<typeof Trade>;
 
