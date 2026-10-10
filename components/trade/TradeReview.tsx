@@ -68,7 +68,7 @@ function display(value: string | number | null, field: TradeField): string {
   return String(value);
 }
 
-export function TradeReview({ trade, pending, error, onEditField, canProceed, onProceedToCallback }: TradeReviewProps) {
+export function TradeReview({ trade, pending, error, onEditField, canProceed, onProceedToCallback, recordingUrl, sourceLabel }: TradeReviewProps) {
   const [selected, setSelected] = useState<TradeField | null>(null);
   const [editing, setEditing] = useState<TradeField | null>(null);
   const [draft, setDraft] = useState("");
@@ -95,6 +95,8 @@ export function TradeReview({ trade, pending, error, onEditField, canProceed, on
       </CardHeader>
       <CardContent className="grid gap-6 lg:grid-cols-2">
         <section aria-label="Transcript">
+          {sourceLabel && <p className="mb-2 text-sm font-medium">📞 {sourceLabel}</p>}
+          {recordingUrl && <audio controls preload="none" src={recordingUrl} className="mb-3 w-full" aria-label="Original call recording" />}
           <h3 className="mb-2 text-sm font-medium text-muted-foreground">Call transcript (highlighted: where each value came from)</h3>
           <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 font-mono text-sm leading-relaxed">
             {parts.map((p, i) =>
