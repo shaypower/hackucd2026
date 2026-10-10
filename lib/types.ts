@@ -201,26 +201,6 @@ export const ExtractResponse = z.object({
 });
 export type ExtractResponse = z.infer<typeof ExtractResponse>;
 
-// POST /api/check: re-run checks after the agent edits a field
-export const CheckRequest = z.object({ extracted: ExtractedTrade });
-export type CheckRequest = z.infer<typeof CheckRequest>;
-
-export const CheckResponse = z.object({
-  checks: z.array(Check),
-  status: TradeStatus,
-  nominated_callback: Contact.nullable(),
-  register_source: RegisterSource,
-});
-export type CheckResponse = z.infer<typeof CheckResponse>;
-
-// POST /api/callback: read the callback transcript and compare it with the original (stateless)
-export const CallbackCheckRequest = z.object({
-  trade_id: z.string(),
-  original: ExtractedTrade,
-  transcript: z.string().trim().min(1).max(20_000),
-});
-export type CallbackCheckRequest = z.infer<typeof CallbackCheckRequest>;
-
 // POST /api/transcribe (multipart "audio") -> transcript text
 export const TranscribeResponse = z.object({ transcript: z.string(), model: z.string() });
 export type TranscribeResponse = z.infer<typeof TranscribeResponse>;
@@ -241,6 +221,7 @@ export const ApiErrorCode = z.enum([
   "checks_failed",
   "callback_mismatch",
   "subscription_required",
+  "conflict", // action not allowed in the trade's current state
   "upstream_error",
   "internal",
 ]);

@@ -38,6 +38,8 @@ export function CallbackPanel({
   onApprove,
   samples = [],
   approved = false,
+  exportUrl,
+  onExport,
 }: CallbackPanelProps) {
   const [transcript, setTranscript] = useState("");
 
@@ -127,6 +129,13 @@ export function CallbackPanel({
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {approved && exportUrl && (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button render={<a href={exportUrl} download onClick={onExport} />}>Download Payments file (.xlsx)</Button>
+            <span className="text-sm text-muted-foreground">Replaces the manual Excel macro. Includes the checks and the audit trail.</span>
           </div>
         )}
 

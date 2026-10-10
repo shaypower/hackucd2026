@@ -1,8 +1,9 @@
 // POST /api/extract { transcript } -> ExtractResponse
-// Reads the trade(s) from a call with the AI model, then runs the deterministic checks.
+// Reads the trade(s) from a call with the AI model, runs the deterministic checks and saves each trade.
 import { ExtractionError, extractTrades } from "@/lib/ai/extract";
 import { apiError, readJson } from "@/lib/api/respond";
 import { getRegister } from "@/lib/db/get-register";
+import { insertTrade } from "@/lib/db/trades";
 import { buildTrade } from "@/lib/trades/build";
 import { ExtractRequest, type ExtractResponse } from "@/lib/types";
 
@@ -36,8 +37,16 @@ export async function POST(request: Request) {
   }
 
   const { register, source } = await getRegister();
+  const trades = result.extraction.trades.map((t) => buildTrade(t, transcript, register));
+  try {
+    for (const trade of trades) await insertTrade(trade, { model: result.model, register_source: source });
+  } catch (error) {
+    console.error("save failed:", error);
+    return apiError("internal", "The trade was read but couldn't be saved. Try again.", 500);
+  }
+
   const response: ExtractResponse = {
-    trades: result.extraction.trades.map((t) => buildTrade(t, transcript, register)),
+    trades,
     unreadable_reason: result.extraction.unreadable_reason,
     register_source: source,
     model: result.model,

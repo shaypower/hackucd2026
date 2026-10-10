@@ -74,6 +74,9 @@ the route registry, global styles.
 - `lib/api/respond.ts` - `apiError()` typed error responses; `lib/api-client.ts` - typed browser client (`extractCall`, `recheckTrade`)
 - `components/trade/TradeInput.tsx`, `TradeReview.tsx` - v1 components (handed over to Dev B for styling)
 - `lib/ai/transcribe.ts` - `transcribeCall(audio, mediaType)` via OpenRouter (default `openai/gpt-audio-mini`, override `OPENROUTER_AUDIO_MODEL`); `lib/audio/wav.ts` - browser `toWav16kMono()` (any audio → 16 kHz mono WAV, ≤120 s)
+- `lib/db/trades.ts` - save/load trades, callbacks, append-only audit (`insertTrade`, `getTradeDetail`, `addAudit`...)
+- `lib/trades/approval.ts` - `callbackBlocker` / `approvalBlocker` workflow rules (server enforces, UI explains); `lib/trades/export.ts` - Payments `.xlsx`
+- `components/audit/AuditTrail.tsx` - v1 (handed over)
 - `lib/trades/diff.ts` - `diffTrades(original, callback)` field-by-field callback comparison; `components/callback/CallbackPanel.tsx` - v1 (handed over)
 
 <!-- BEGIN:nextjs-agent-rules -->
