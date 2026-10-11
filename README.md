@@ -8,6 +8,20 @@ TelDeal listens to the call, reads the trade with AI, **checks every field in co
 
 > **The AI proposes; code decides; a human approves.**
 
+![TelDeal landing page](docs/screenshots/landing.png)
+
+**The dealing desk:** take a call on the phone line, record or upload one, or paste a transcript. *(Phone numbers masked.)*
+
+![The dealing desk: live phone line and capture form](docs/screenshots/desk.png)
+
+**A call, read and checked:** each value links to the words in the call it came from, and every check is code, not the AI.
+
+![A trade read from a phone call, with source evidence and passed checks](docs/screenshots/trade-verify.png)
+
+**A fraudulent instruction, blocked:** a wrong check digit and an unauthorised caller stop the trade before any callback.
+
+![A blocked trade: invalid ISIN and a caller who is not a signatory](docs/screenshots/blocked-fraud.png)
+
 ---
 
 ## Try it (2 minutes)
